@@ -5,10 +5,11 @@ from pathlib import Path
 
 from playwright.sync_api import Error, expect, sync_playwright
 
+from .access import AccessMonitor
 from .browser import matter_metadata
 from .catalog import read_catalog
 from .downloads import download_document, error_message
-from .models import CATEGORIES, Document, DownloadError, MatterNotFound, RetrievalError, selection_order
+from .models import CATEGORIES, Document, DownloadError, MatterNotFound, RetrievalError, SiteAccessBlocked, selection_order
 from .transfer import DownloadMonitor
 
 
@@ -77,22 +78,29 @@ def retrieve(matter: str, category: str, output: Path, limit: int = 10, progress
                 page = browser.new_page(accept_downloads=True, viewport={"width": 1600, "height": 1000})
                 page.set_default_timeout(30000)
                 expect.set_options(timeout=30000)
+                access = AccessMonitor(page)
+                def checked(action):
+                    try:
+                        return action()
+                    finally:
+                        access.check(page)
                 monitor = DownloadMonitor(browser, page, output / "incomplete" / "browser")
                 report["download_policy"] = {"idle_seconds": monitor.idle_seconds,
                                               "maximum_seconds": monitor.maximum_seconds,
                                               "attempts_per_file": 2}
                 progress(f"Looking up {matter}")
-                report["matter"] = matter_metadata(page, matter)
+                report["matter"] = checked(lambda: matter_metadata(page, matter))
                 checkpoint()
                 count = report["matter"]["category_counts"][category]
                 progress(f"Enumerating {count} {category} entries")
-                documents = read_catalog(page, category, count)
+                documents = checked(lambda: read_catalog(page, category, count))
                 report["catalog"] = [{"document_key": doc.key, **asdict(doc)} for doc in documents]
                 report["duplicate_metadata_entries"] = len(documents) - len({doc.fingerprint for doc in documents})
                 report["identity_note"] = "Keys describe source metadata and occurrence within this captured list, not global file IDs."
                 def download(doc):
                     progress(f"Downloading {doc.source_id or doc.title}")
-                    return download_document(page, doc, output, matter, monitor)
+                    return checked(lambda: download_document(page, doc, output, matter, monitor,
+                                                              check_access=lambda: access.check(page)))
                 collect_files(documents, limit, download, report, checkpoint)
             finally:
                 try:
@@ -101,7 +109,8 @@ def retrieve(matter: str, category: str, output: Path, limit: int = 10, progress
                 finally:
                     browser.close()
     except Exception as error:
-        report.update({"status": "not_found" if isinstance(error, MatterNotFound) else "error",
+        status = "access_blocked" if isinstance(error, SiteAccessBlocked) else "not_found" if isinstance(error, MatterNotFound) else "error"
+        report.update({"status": status,
                        "error": {"type": type(error).__name__, "message": error_message(error)}})
         if getattr(error, "details", None) is not None:
             report["error"]["details"] = error.details

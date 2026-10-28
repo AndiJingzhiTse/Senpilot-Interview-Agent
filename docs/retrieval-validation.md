@@ -73,3 +73,10 @@ Unknown website states stop the request with its existing successful results pre
 The live file samples were PDFs and WAV audio. MP3 parsing and ZIP container checks are implemented, while other formats receive a nonempty transfer check; every possible format has not been exercised live.
 Ten Recording downloads have not been tested. The observed audio sizes are material to the next ZIP and email stages.
 Category totals overlap, so the report labels their sum as category entries rather than unique files.
+
+## Explicit access blocks
+
+Local Chrome fixtures verified HTTP 403, HTTP 429 with Retry-After, a recognized challenge title, and an ordinary page that must remain accessible.
+The retrieval now reports `access_blocked` for these recognized signals and stops without retrying the blocked file.
+Existing successful files can still be packaged as partial results. These fixtures do not establish which protection system, if any, the live website uses.
+Challenge detection is limited to the implemented signals; an unfamiliar blocking page can still appear as a general retrieval failure.

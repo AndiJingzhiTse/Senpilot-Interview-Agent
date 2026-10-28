@@ -18,6 +18,10 @@ class DownloadError(RuntimeError):
     """An individual file failed, after returning the browser to its list."""
 
 
+class SiteAccessBlocked(RetrievalError):
+    """The website asked the agent to stop or requires human interaction."""
+
+
 @dataclass(frozen=True)
 class Document:
     category: str

@@ -48,15 +48,19 @@ def download_once(page: Page, document: Document, output: Path, matter: str, mon
     }
 
 
-def download_document(page: Page, document: Document, output: Path, matter: str, monitor) -> dict:
+def download_document(page: Page, document: Document, output: Path, matter: str, monitor, check_access=None) -> dict:
     """Retry one failed file using a fresh export after cleaning known dialogs."""
     errors = []
     for attempt in range(1, 3):
+        if check_access is not None:
+            check_access()
         try:
             result = download_once(page, document, output, matter, monitor)
             result.update({"attempts": attempt, "previous_errors": errors})
             return result
         except (Error, DownloadError, OSError) as error:
             errors.append(error_message(error))
+            if check_access is not None:
+                check_access()
             close_exports(page)
     raise DownloadError("; ".join(errors))

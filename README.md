@@ -88,6 +88,8 @@ Files are downloaded sequentially with Playwright download events and `save_as`,
 The Export Field to File dialog's filename is normalized to avoid the observed Chrome header error with commas.
 Chrome's download progress events enforce a 30 second inactivity limit and a 15 minute maximum per transfer. A failed file is retried once using a fresh export.
 The transfer remains inside the browser; the HTTP comparison client is not used by this command.
+Observed HTTP 403 or 429 responses from the source host and recognized challenge pages stop retrieval without a file retry.
+The report records `access_blocked` and retains existing successful results. A stalled transfer alone is not classified as an access block.
 
 Empty downloads, HTML error pages, invalid PDFs, and unreadable supported formats are reported as failures.
 PDF structures, MP3 headers, WAV headers, and ZIP containers are inspected; other formats receive a nonempty file check. Every completed file gets a size and SHA256 hash.

@@ -10,7 +10,7 @@ from zipfile import BadZipFile, ZIP_DEFLATED, ZipFile
 
 CHUNK_SIZE = 1024 * 1024
 TERMINAL_STATUSES = {"complete", "partial", "empty", "unavailable", "metadata_only",
-                     "not_found", "error", "interrupted"}
+                     "not_found", "error", "interrupted", "access_blocked"}
 
 
 class PackagingError(Exception):
