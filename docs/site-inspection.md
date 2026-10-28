@@ -187,3 +187,39 @@ Build a small browser probe that opens M12205, verifies the displayed matter num
 Evaluate Python with Playwright against the actual DOM and field commit behavior before expanding to downloads.
 Success means a structured result grounded in the live page, no hardcoded example counts, and a clear failure for a mismatched or nonexistent matter.
 Only then add the two observed export flows, row traversal, and security handling in separate reviewable changes.
+
+## API and direct download comparison
+
+Additional read only checks on October 27, 2026:
+
+| Request without credentials or browser cookies | Observed result |
+| --- | --- |
+| GET `/fmi/data/vLatest/productInfo` | HTTP 502, HTML gateway error |
+| GET `/fmi/data/vLatest/databases` | HTTP 502, HTML gateway error |
+| GET `/fmi/data/vLatest/databases/UARB15/layouts` | HTTP 502, HTML gateway error |
+| GET the actual PDF download URL from the verified browser download | HTTP 403 |
+| GET an earlier browser download URL for the same PDF | HTTP 403 |
+
+The PDF URLs were read from the sample file's Chrome download entries, not constructed by guessing document paths.
+They used the form `/fmi/webd/APP/connector/0/<connector>/dl/102674.pdf`, with different connector values for the two downloads.
+These failures do not prove that the Data API is permanently disabled or that direct downloads cannot work.
+The 502 responses only establish that the tested API endpoints were not usable from these requests.
+The 403 responses may reflect session requirements, expired exported files, or other request context; the cause has not been isolated.
+No database credentials were supplied and no authenticated API session was established.
+
+Claris documents that Data API access requires the database account's fmrest privilege and an authenticated database session:
+[enable access](https://help.claris.com/en/data-api-guide/content/enable-access.html),
+[database session authentication](https://help.claris.com/en/data-api-guide/content/log-in-database-session.html).
+Access to public WebDirect pages therefore does not establish Data API access.
+
+Proposed comparison for the browser probe:
+
+1. Obtain a fresh download URL through the normal export flow and keep the export dialog and session open.
+2. Compare a normal browser download with an HTTP request through the same Playwright browser context.
+3. Verify that both return the same file bytes, then assess timing and repeatability before choosing the transport.
+
+Playwright's [APIRequestContext](https://playwright.dev/python/docs/api/class-apirequestcontext) can share cookies with its browser context.
+That makes a browser plus HTTP approach technically possible, but its compatibility with this website is still unverified.
+It would still need browser navigation to discover files and prepare exports unless a usable data endpoint is found.
+A supported accessible API would be preferable for structured discovery and extraction; imitating undocumented WebDirect requests may be more fragile than using the normal interface.
+No speed benchmark has been performed. Fewer UI operations may reduce overhead, but direct HTTP alone does not establish faster transfer of the same file bytes.
