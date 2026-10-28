@@ -190,7 +190,8 @@ Only then add the two observed export flows, row traversal, and security handlin
 
 Followup: the [download transport probe](transport-probe.md) now implements browser lookup, verifies the matter and five counts, and tests browser plus HTTP retrieval for individual public PDFs.
 See that report for the successful same session downloads, expiry checks, Transcript filename fix, and remaining scope.
-The selected default was subsequently changed to browser downloads; HTTP comparison is retained only behind `--compare-http`. The next milestone is specified in the [working plan](../WORKFLOW.md#next-milestone).
+The selected default was subsequently changed to browser downloads; HTTP comparison is retained only behind `--compare-http`.
+The [local retrieval command](../README.md) now implements all five category layouts, complete selected category traversal, metadata extraction, and up to ten successful downloads. See its [live validation](retrieval-validation.md) and the [next milestone](../WORKFLOW.md#next-milestone).
 
 ## API and direct download comparison
 

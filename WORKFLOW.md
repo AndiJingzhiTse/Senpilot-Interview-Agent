@@ -26,7 +26,7 @@ The selected download approach is browser automation with Playwright download ev
 5. Test the complete workflow and failure cases.
 6. Prepare setup instructions and a reproducible demonstration.
 
-## Next milestone
+## Completed local retrieval milestone
 
 Build a local retrieval command that accepts a matter number and one of the five document categories, collects the matter overview metadata and category counts, and downloads up to ten available files using the browser.
 
@@ -40,7 +40,13 @@ Acceptance checks:
 - Complete each browser download before closing its export dialog, retaining the Transcript filename normalization.
 
 Validate the command on a category with more than ten entries, a category with fewer than ten, an empty category, and a nonexistent matter. Include a Recording sample before declaring all five categories supported.
-Then add ZIP packaging in stage 3 and email handling in stage 4.
+These cases have been exercised; see the [live checks](docs/retrieval-validation.md) and [run instructions](README.md).
+
+## Next milestone
+
+Add ZIP packaging in stage 3 using only the report's completed file list.
+Verify archive entry counts and file hashes, preserve clear source filename mappings, and report archive size before email delivery is added.
+Handle empty results and partial retrievals explicitly. The large Recording samples will need an attachment size policy when the email provider is chosen in stage 4.
 
 ## References
 

@@ -79,5 +79,6 @@ Both produced valid PDFs with the same hashes as the previous experiments, inclu
 
 The next implementation stage needs reusable retrieval functions, deterministic selection and list traversal, handling for unavailable entries, and retries with explicit failure reporting.
 Audio bytes, large attachments, all ten files in one request, ZIP creation, and email have not been tested by this PDF probe.
+The separate [retrieval command](../README.md) now has live checks for ten PDFs and WAV Recordings; see the [retrieval validation](retrieval-validation.md) for those results and audio format warnings.
 
 References: [Playwright request contexts](https://playwright.dev/python/docs/api/class-apirequestcontext), [download events](https://playwright.dev/python/docs/downloads), and the [earlier site inspection](site-inspection.md).

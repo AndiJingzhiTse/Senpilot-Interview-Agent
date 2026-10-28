@@ -7,36 +7,17 @@ from io import BytesIO
 import json
 from pathlib import Path
 import re
+import sys
 from time import perf_counter
 
 from playwright.sync_api import Error, expect, sync_playwright
 from pypdf import PdfReader
 
-SITE = "https://uarb.novascotia.ca/fmi/webd/UARB15"
-CATEGORIES = ("Exhibits", "Key Documents", "Other Documents", "Transcripts", "Recordings")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from senpilot.browser import SITE, open_matter, prepare_export
+from senpilot.models import CATEGORIES
+
 DOWNLOAD_ROUTE = "https://uarb.novascotia.ca/fmi/webd/APP/connector/**/dl/**"
-
-
-def open_matter(page, matter):
-    """Wait for FileMaker to activate its editor before filling and committing it."""
-    page.goto(SITE)
-    page.get_by_text("Go Directly to Matter", exact=True).wait_for()
-    field = page.get_by_text("eg M01234", exact=True).locator("..").locator(".text")
-    field.click()
-    expect(field).to_have_attribute("contenteditable", "true")
-    field.fill(matter)
-    field.press("Tab")
-    page.locator("#b0p0o258i0i0r1").click()
-    page.get_by_role("button", name=re.compile(r"^Exhibits\s*-\s*\d+$")).wait_for()
-    expect(page.get_by_text(matter, exact=True)).to_be_visible()
-    counts = {}
-    for label in page.get_by_role("button").all_text_contents():
-        match = re.fullmatch(r"(.+?)\s*-\s*(\d+)", " ".join(label.split()))
-        if match and match[1] in CATEGORIES:
-            counts[match[1]] = int(match[2])
-    if set(counts) != set(CATEGORIES):
-        raise RuntimeError("The matter overview did not expose all five category counts")
-    return counts
 
 
 def select_public_row(page, category, row_text):
@@ -49,29 +30,6 @@ def select_public_row(page, category, row_text):
     if "Public" not in [line.strip() for line in description.splitlines()]:
         raise ValueError("The probe requires a row explicitly labelled Public")
     return row, description
-
-
-def prepare_export(page, row):
-    """Handle both observed export flows without assuming an extension or filename."""
-    row.get_by_role("button", name="GO GET IT", exact=True).click()
-    prompt = page.get_by_role("dialog", name=re.compile(r"^(Download Files|Export Field to File)$"))
-    expect(prompt).to_be_visible()
-    export_name = None
-    if prompt.get_by_role("button", name="OK", exact=True).count():
-        filename = prompt.get_by_role("textbox")
-        original = filename.input_value()
-        normalized = re.sub(r"[^A-Za-z0-9._-]", "_", original)
-        if not normalized or normalized in {".", ".."}:
-            raise ValueError("The export dialog did not provide a usable filename")
-        filename.fill(normalized)
-        export_name = {"original": original, "normalized": normalized}
-        prompt.get_by_role("button", name="OK", exact=True).click()
-    dialog = page.get_by_role("dialog", name="Download Files", exact=True)
-    expect(dialog).to_be_visible()
-    button = dialog.locator(".fm-download-button")
-    expect(button).to_have_count(1)
-    expect(button).to_be_enabled()
-    return dialog, button, export_name
 
 
 def browser_baseline(page, button, output, matter):
