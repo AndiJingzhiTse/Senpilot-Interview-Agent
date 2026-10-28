@@ -5,9 +5,9 @@ Andi Tse selected these roles:
 | Address | Role |
 | --- | --- |
 | andi.xie241@gmail.com | Agent mailbox: receives requests and sends replies |
-| andi.xie24@gmail.com | Allowed requester and ZIP recipient |
+| andi.xie24@gmail.com | Original test requester and ZIP recipient |
 
-The implementation and local previews are ready. Live Gmail authorization, a DeepSeek API call, and actual email delivery have not been exercised yet.
+The Windows background task is active and accepts requests from any sender. Live Gmail authorization, DeepSeek extraction, and ZIP delivery have been verified; see [deployment validation](deployment-validation.md).
 
 ## Install
 
@@ -25,7 +25,7 @@ The email dependencies are optional for browser retrieval. DeepSeek requests use
 This command uses the saved M12205 request, writes a local `.eml` reply, and does not connect to Gmail, DeepSeek, or the documents website:
 
 ```powershell
-& $senpilotPython -m senpilot.email --eml examples/request.eml --agent andi.xie241@gmail.com --allow-sender andi.xie24@gmail.com --extractor exact --saved-report artifacts/retrieval/release-ten-other-documents/report.json --state artifacts/email/pdf-preview
+& $senpilotPython -m senpilot.email --eml examples/request.eml --agent andi.xie241@gmail.com --accept-any-sender --extractor exact --saved-report artifacts/retrieval/release-ten-other-documents/report.json --state artifacts/email/pdf-preview
 ```
 
 The prepared reply is under that state directory's `jobs/` folder. Repeating the command reuses the queued result rather than downloading or preparing it again.
@@ -72,30 +72,32 @@ Only the request subject and text body are passed to extraction. Addresses, atta
 
 ## First live request
 
-From **andi.xie24@gmail.com**, send a request to **andi.xie241@gmail.com** such as:
+From any email address, send a request to **andi.xie241@gmail.com** such as:
 
 > Can you give me Other Documents files from M12205?
 
 Leave it unread in the agent inbox until the worker polls it. Run one poll to prepare a local reply:
 
 ```powershell
-& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --allow-sender andi.xie24@gmail.com --state artifacts/email/live
+& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --accept-any-sender --state artifacts/email/live
 ```
 
 This performs real request extraction and browser retrieval, but saves the reply locally. After inspecting it, add `--send` to send prepared replies through Gmail:
 
 ```powershell
-& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --allow-sender andi.xie24@gmail.com --state artifacts/email/live --send
+& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --accept-any-sender --state artifacts/email/live --send
 ```
 
 For automatic ongoing handling, add `--watch`. It polls every 60 seconds by default and stops with Ctrl+C:
 
 ```powershell
-& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --allow-sender andi.xie24@gmail.com --state artifacts/email/live --send --watch
+& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --accept-any-sender --state artifacts/email/live --send --watch
 ```
 
 Gmail sends use MIME messages and base64url encoding as documented in Google's [sending guide](https://developers.google.com/workspace/gmail/api/guides/sending).
-Polling filters unread Inbox messages by the allowed sender list and does not mark them read, delete them, or change their labels. Gmail message IDs prevent repeated handling within the same state directory.
+With `--accept-any-sender`, polling accepts unread Inbox messages from any sender. It does not mark them read, delete them, or change their labels. Gmail message IDs prevent repeated handling within the same state directory. Automatic replies, bulk mail, delivery reports, and messages from the agent itself are ignored.
+
+For restricted intake, replace `--accept-any-sender` with one or more `--allow-sender ADDRESS` arguments. Choose exactly one policy. The background service uses `accept_any_sender: true` with an empty `allowed_senders` list in its JSON configuration; restart the task after changing it. Requesters do not need OAuth authorization or Google test user registration.
 
 ## Attachment policy
 
@@ -110,8 +112,7 @@ The observed 392 MB Recording ZIP takes this exception path, so automatic ZIP de
 ## Queue and recovery
 
 Use one state directory for the agent mailbox so workers share duplicate detection, locking, and website pauses.
-Each accepted request receives its own job directory. Replies target the original From address, subject to `--allow-sender`; a body instruction or Reply-To header cannot redirect delivery.
-The sender list bounds this local demonstration's intake; it is not identity authentication for a public service.
+Each accepted request receives its own job directory. Replies target the original From address; a body instruction or Reply-To header cannot redirect delivery. An optional sender list restricts intake when configured; it does not authenticate sender identity.
 
 ```powershell
 & $senpilotPython -m senpilot.email --status --state artifacts/email/live
@@ -127,7 +128,7 @@ The sender list bounds this local demonstration's intake; it is not identity aut
 | failed | Processing failed before delivery |
 | sending or send_uncertain | Sending began but confirmation is missing; it is never automatically repeated |
 
-An interrupted or failed processing job can be explicitly retried with `--retry-job FULL_JOB_ID --agent andi.xie241@gmail.com --allow-sender andi.xie24@gmail.com --state artifacts/email/live`.
+An interrupted or failed processing job can be explicitly retried with `--retry-job FULL_JOB_ID --agent andi.xie241@gmail.com --accept-any-sender --state artifacts/email/live`.
 For an uncertain send, inspect the agent's Sent mail using the reply's Message-ID before any manual reconciliation. Neither `--retry-job` nor a restart repeats these sends.
 The current worker uses an OS lock that releases when the process exits. Its lock file remains on disk and must not be deleted to bypass another worker.
 When upgrading from the original lock format, stop the old worker normally first. The new worker deliberately refuses to adopt that legacy file.

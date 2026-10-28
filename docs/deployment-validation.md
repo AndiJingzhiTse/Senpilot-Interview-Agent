@@ -86,3 +86,18 @@ The new heartbeat records Python 3.12.16 and `artifacts/runtime/venv/Scripts/pyt
 The original task XML and Python 3.10 environment remain available for rollback. See [runtime migration](runtime-upgrade.md).
 
 Andi chose to keep the current oversized ZIP notice and explicitly disclose the resulting attachment limitation. The [requirements review](requirements-review.md) and [demo guide](demo.md) form the handoff record.
+
+## Requests from any sender
+
+On October 28, 2026, Andi requested intake from any email address. The service now uses `accept_any_sender: true` and an empty `allowed_senders` list.
+The CLI requires an explicit sender policy. Inbox polling, processing, and reply sending all use that policy; an empty restricted list never enables unrestricted intake.
+Replies still target the original From address, and automatic messages, bulk mail, malformed senders, and self messages retain their existing exclusions.
+
+The full suite ran 85 tests: 84 passed and the existing Windows symlink test was skipped.
+New tests cover a new customer address through mocked Gmail intake, retrieval, ZIP preparation, and a single confirmed send, including restart deduplication and a Reply-To redirection attempt.
+Other checks cover the unrestricted Gmail query, empty restricted lists, explicit CLI and JSON configuration, and message exclusions in unrestricted mode.
+
+The idle Windows task was stopped, its configuration updated, local preflight passed, and the task restarted.
+Its fresh heartbeat confirmed `sender_policy: any`, Python 3.12.16, and healthy running status. Previously excluded unread messages entered the queue.
+Activation snapshots are saved in ignored `artifacts/deployment/any-sender-before.json` and `artifacts/deployment/any-sender-activation.json`.
+Recipient receipt from a new address has not yet been confirmed for this change.

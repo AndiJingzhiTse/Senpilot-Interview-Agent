@@ -4,24 +4,23 @@ Maintainer: Andi Tse. The [requirements review](requirements-review.md) records 
 
 ## Existing live demonstration
 
-The configured agent mailbox is **andi.xie241@gmail.com**. The current allowed requester is **andi.xie24@gmail.com**.
+The configured agent mailbox is **andi.xie241@gmail.com**. It accepts requests from any sender; **andi.xie24@gmail.com** is the original test requester.
 It runs as Windows task **SenpilotAgent**, starting at user logon. The computer must remain awake, online, and signed in.
 
-An evaluator who wants to send from another address should give that address to Andi first.
-Andi stops the task, retains the current sender and adds the evaluator to `allowed_senders` in ignored `deploy/agent.json`, validates the configuration, then starts the task again.
-For example, the configuration list would become:
+Evaluators can email the agent directly without registering their addresses. The active sender configuration is:
 
 ```json
-"allowed_senders": ["andi.xie24@gmail.com", "reviewer@example.com"]
+"accept_any_sender": true,
+"allowed_senders": []
 ```
 
-Replace the example reviewer address with the actual agreed address. No recipient address is selected by the AI model.
+Replies go to the original From address. No recipient address is selected by the AI model.
 The evaluator does not need Gmail OAuth authorization to email the existing agent. OAuth belongs to the agent mailbox.
 
 ## Demonstration sequence
 
 1. Show that the task is running and its heartbeat is current.
-2. From an allowed address, send a new email to the agent with: “Can you give me Other Documents files from M12205?”
+2. From any address, send a new email to the agent with: “Can you give me Other Documents files from M12205?”
 3. Leave the request unread in the agent inbox until the worker polls it. The default polling interval is 60 seconds; processing time depends on the website and files.
 4. Show the resulting reply with matter metadata, all five category counts, downloaded and skipped counts, and the ZIP attachment.
 5. Open the ZIP and its manifest. There are at most ten retrieved documents plus the manifest. Original names and file hashes are listed there.
@@ -76,7 +75,7 @@ Explain that the notice is a disclosed limitation: an oversized request does not
 ## Reproduce on another machine
 
 Use the [README setup](../README.md), [Gmail and DeepSeek configuration](email-setup.md), and [deployment guide](deployment.md).
-Install the pinned dependencies, configure a separate agent mailbox, authorize that mailbox, set a DeepSeek key locally, and choose the allowed requesters.
+Install the pinned dependencies, configure a separate agent mailbox, authorize that mailbox, set a DeepSeek key locally, and choose whether to accept any sender or a specific sender list.
 Incoming mail, OAuth tokens, API keys, downloaded documents, and queue state are excluded from Git.
 The running agent uses Python 3.12.16; the original Python 3.10 environment is retained locally only for rollback.
 

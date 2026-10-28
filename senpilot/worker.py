@@ -13,7 +13,7 @@ from .packaging import PackagingError, package_report
 from .requests import ExtractionError, RequestError, extract_request
 
 
-def process_job(queue, job: dict, agent_address: str, allowed_senders: set[str], *, extractor="deepseek",
+def process_job(queue, job: dict, agent_address: str, allowed_senders: set[str] | None, *, extractor="deepseek",
                 saved_report: Path | None = None, max_message_bytes=20_000_000, retrieve=None):
     info = job["info"]
     info["extractor"] = extractor
@@ -25,7 +25,7 @@ def process_job(queue, job: dict, agent_address: str, allowed_senders: set[str],
         info["saved_report"] = str(saved_report.resolve())
     try:
         incoming = read_message(job["raw"], agent_address)
-        if incoming.sender.casefold() not in {sender.casefold() for sender in allowed_senders}:
+        if allowed_senders is not None and incoming.sender.casefold() not in {sender.casefold() for sender in allowed_senders}:
             raise MessageError("The sender is not in the configured sender list")
     except MessageError as error:
         queue.finish(job["id"], "ignored", {**info, "reason": str(error)})
@@ -99,7 +99,7 @@ def send_prepared(queue, provider, agent_address, allowed_senders):
         info = job["info"]
         if info["agent_address"].casefold() != agent_address.casefold():
             raise ValueError("A prepared reply belongs to a different agent mailbox")
-        if info["recipient"].casefold() not in {value.casefold() for value in allowed_senders}:
+        if allowed_senders is not None and info["recipient"].casefold() not in {value.casefold() for value in allowed_senders}:
             continue
         path = (queue.root / info["reply_path"]).resolve(strict=True)
         if not path.is_relative_to(queue.root.resolve()):

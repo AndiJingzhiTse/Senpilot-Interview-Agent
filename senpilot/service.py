@@ -18,6 +18,7 @@ from .runtime import ConfigurationError, Heartbeat, LogStream, check_health, loa
 
 def supervise(config, key, stop, *, worker=email_main):
     heartbeat = Heartbeat(config.state)
+    heartbeat.update(sender_policy="any" if config.accept_any_sender else "allowlist")
     logger = service_logger(heartbeat.path.parent, key, sys.stdout)
     monitor_stop = threading.Event()
     def monitor():

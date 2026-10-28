@@ -37,7 +37,9 @@ def main(argv=None):
     source.add_argument("--status", action="store_true", help="List queue state without processing or sending")
     source.add_argument("--retry-job", help="Retry a failed job or interrupted processing job by its full ID")
     parser.add_argument("--agent", help="Agent address for local .eml mode; Gmail mode uses the authorized profile")
-    parser.add_argument("--allow-sender", action="append", default=[], help="Accepted requester; repeat for more addresses")
+    senders = parser.add_mutually_exclusive_group()
+    senders.add_argument("--allow-sender", action="append", default=[], help="Accepted requester; repeat for more addresses")
+    senders.add_argument("--accept-any-sender", action="store_true", help="Accept requests from any sender")
     parser.add_argument("--state", type=Path, default=Path("artifacts/email"))
     parser.add_argument("--token", type=Path, default=Path("artifacts/oauth/token.json"))
     parser.add_argument("--extractor", choices=("deepseek", "exact"), default="deepseek")
@@ -60,8 +62,8 @@ def main(argv=None):
         parser.error("--status does not change the site pause; use --resume-site with a processing mode")
     if args.saved_report and not args.eml:
         parser.error("--saved-report requires --eml")
-    if not args.status and (not args.allow_sender or (not args.gmail and not args.agent)):
-        parser.error("Processing requires --allow-sender and local mode also requires --agent")
+    if not args.status and ((not args.allow_sender and not args.accept_any_sender) or (not args.gmail and not args.agent)):
+        parser.error("Processing requires --allow-sender or --accept-any-sender; local mode also requires --agent")
     if (not math.isfinite(args.interval) or args.interval < 5 or not math.isfinite(args.poll_seconds)
             or args.poll_seconds < 30 or not 100_000 <= args.max_message_bytes <= 25_000_000):
         parser.error("Use finite intervals: --interval at least 5, --poll-seconds at least 30, and a message limit from 100000 to 25000000")
@@ -79,7 +81,7 @@ def main(argv=None):
                 if queue.rows("send_uncertain"):
                     print("Sending requires reconciliation before automatic operation can continue.", file=sys.stderr)
                     return 2
-            allowed = {mailbox(value).casefold() for value in args.allow_sender}
+            allowed = None if args.accept_any_sender else {mailbox(value).casefold() for value in args.allow_sender}
             provider = None
             if args.gmail:
                 from .gmail import Gmail

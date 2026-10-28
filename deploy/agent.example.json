@@ -1,6 +1,7 @@
 {
   "agent_address": "andi.xie241@gmail.com",
-  "allowed_senders": ["andi.xie24@gmail.com"],
+  "accept_any_sender": true,
+  "allowed_senders": [],
   "state": "../artifacts/email/live",
   "token": "../artifacts/oauth/token.json",
   "deepseek_key_file": "../artifacts/deploy/deepseek.key",

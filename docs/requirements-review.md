@@ -32,7 +32,7 @@ Source dates are preserved as labelled by the website, including Decision Date; 
 - An empty category produces an explanatory reply without an empty ZIP. A missing or ambiguous request produces clarification.
 - Use a 20 MB encoded MIME message policy. Any category can produce an oversized archive; this policy is not limited to Recordings.
 - Preserve source bytes and record format warnings rather than silently rewriting published audio.
-- Reply to the original sender from the configured allowed sender list. The model cannot select a recipient, filesystem path, or alternative website.
+- Accept requests from any sender and reply to the original From address. A specific sender list remains available as an optional configuration. The model cannot select a recipient, filesystem path, or alternative website.
 
 ## Oversized archive decision
 
@@ -62,6 +62,6 @@ The two downloaded WAV samples were approximately 411 MB and 472 MB. This small 
 
 The active Windows task has been migrated to Python 3.12.16 after regression checks and live Gmail profile and DeepSeek extraction checks. The old environment remains available for rollback. See [runtime migration](runtime-upgrade.md).
 The [demo and handoff guide](demo.md) covers the normal request, an empty category, clarification, and the size notice without downloading large audio again.
-Before an evaluator uses the existing agent, Andi must add that evaluator's sender address to the allowed sender list. An evaluator reproducing the project independently supplies their own agent mailbox, OAuth configuration, and DeepSeek key.
+Evaluators can email the existing agent without registering their sender addresses. An evaluator reproducing the project independently supplies their own agent mailbox, OAuth configuration, and DeepSeek key.
 
 The known attachment limitation should appear in the submission and demo. The assignment itself does not specify a hosted deployment, a demonstration video, or a new user interface; the background task and demo notes are supporting deliverables.

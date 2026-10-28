@@ -34,13 +34,17 @@ class ServiceConfig:
     job_interval: float = 5
     restart_limit: int = 5
     restart_delay: float = 5
+    accept_any_sender: bool = False
 
     def worker_args(self):
         args = ["--gmail", "--watch", "--recover-processing", "--agent", self.agent_address,
                 "--state", str(self.state), "--token", str(self.token),
                 "--poll-seconds", str(self.poll_seconds), "--interval", str(self.job_interval)]
-        for sender in self.allowed_senders:
-            args.extend(["--allow-sender", sender])
+        if self.accept_any_sender:
+            args.append("--accept-any-sender")
+        else:
+            for sender in self.allowed_senders:
+                args.extend(["--allow-sender", sender])
         return args + (["--send"] if self.send else [])
 
 
@@ -48,11 +52,19 @@ def load_config(path: Path) -> ServiceConfig:
     path = path.resolve(strict=True)
     data = json.loads(path.read_text(encoding="utf-8-sig"))
     allowed = {"agent_address", "allowed_senders", "state", "token", "deepseek_key_file", "model", "send",
-               "poll_seconds", "job_interval", "restart_limit", "restart_delay"}
+               "poll_seconds", "job_interval", "restart_limit", "restart_delay", "accept_any_sender"}
     if not isinstance(data, dict) or set(data) - allowed:
         raise ConfigurationError("Unknown service configuration fields")
-    if not isinstance(data.get("allowed_senders"), list) or not data["allowed_senders"]:
-        raise ConfigurationError("Configure at least one allowed sender")
+    if type(data.get("accept_any_sender", False)) is not bool:
+        raise ConfigurationError("accept_any_sender must be true or false")
+    senders = data.get("allowed_senders", [])
+    if not isinstance(senders, list):
+        raise ConfigurationError("allowed_senders must be a list")
+    if data.get("accept_any_sender", False):
+        if senders:
+            raise ConfigurationError("Use accept_any_sender or allowed_senders, not both")
+    elif not senders:
+        raise ConfigurationError("Configure allowed_senders or explicitly enable accept_any_sender")
     def location(name, optional=False):
         value = data.get(name)
         if value is None and optional:
@@ -70,9 +82,9 @@ def load_config(path: Path) -> ServiceConfig:
         raise ConfigurationError("restart_limit must be between zero and ten")
     if not isinstance(data.get("model", "deepseek-flash"), str) or not data.get("model", "deepseek-flash").strip():
         raise ConfigurationError("Configure a DeepSeek model name")
-    return ServiceConfig(mailbox(data.get("agent_address")), tuple(mailbox(value) for value in data["allowed_senders"]),
+    return ServiceConfig(mailbox(data.get("agent_address")), tuple(mailbox(value) for value in senders),
                          location("state"), location("token"), location("deepseek_key_file", optional=True),
-                         **{name: data[name] for name in ("model", "send", "poll_seconds", "job_interval", "restart_limit", "restart_delay") if name in data})
+                         **{name: data[name] for name in ("model", "send", "poll_seconds", "job_interval", "restart_limit", "restart_delay", "accept_any_sender") if name in data})
 
 
 def load_key(config: ServiceConfig) -> str:

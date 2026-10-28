@@ -19,10 +19,14 @@ An ignored `deploy/agent.json` was prepared here from `deploy/agent.example.json
 Paths in this JSON are resolved relative to the configuration file. The example reuses the current live queue and OAuth token:
 
 - Agent mailbox: andi.xie241@gmail.com.
-- Allowed requester: andi.xie24@gmail.com.
+- Requesters: any sender, with `accept_any_sender: true` and an empty `allowed_senders` list.
 - Queue and documents: `artifacts/email/live/`.
 - Gmail token: `artifacts/oauth/token.json`.
 - DeepSeek key file: `artifacts/deploy/deepseek.key`.
+
+The sender policy must be explicit. To restrict intake, set `accept_any_sender` to `false` and populate `allowed_senders`.
+To accept any sender, set `accept_any_sender` to `true` and leave `allowed_senders` empty. Restart the task after editing the configuration.
+Only unread Inbox messages are polled. Automatic replies, delivery reports, bulk mail, and messages from the agent itself are ignored.
 
 For a new activation or migration, stop any existing terminal worker with Ctrl+C and wait for it to exit.
 In a terminal where `DEEPSEEK_API_KEY` is already set, save that key without displaying it:

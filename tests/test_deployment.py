@@ -49,7 +49,8 @@ class DeploymentTests(unittest.TestCase):
 
     def test_invalid_configuration_is_rejected(self):
         for field, value in (("send", "false"), ("poll_seconds", 1), ("job_interval", float("nan")),
-                             ("restart_limit", -1), ("allowed_senders", []), ("command", "arbitrary executable")):
+                             ("restart_limit", -1), ("allowed_senders", []), ("accept_any_sender", "true"),
+                             ("accept_any_sender", True), ("command", "arbitrary executable")):
             with self.subTest(field=field):
                 original = dict(self.data)
                 self.data[field] = value
@@ -57,6 +58,15 @@ class DeploymentTests(unittest.TestCase):
                 with self.assertRaises(ConfigurationError):
                     load_config(self.config_path)
                 self.data = original
+
+    def test_any_sender_configuration_reaches_the_worker_explicitly(self):
+        self.data.update(accept_any_sender=True, allowed_senders=[])
+        self.save()
+        config = load_config(self.config_path)
+        self.assertTrue(config.accept_any_sender)
+        self.assertEqual(config.allowed_senders, ())
+        self.assertIn("--accept-any-sender", config.worker_args())
+        self.assertNotIn("--allow-sender", config.worker_args())
 
     def test_missing_key_or_invalid_scopes_fail_before_browser_launch(self):
         with patch("playwright.sync_api.sync_playwright") as browser:

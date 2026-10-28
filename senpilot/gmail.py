@@ -47,6 +47,9 @@ class Gmail:
         self.address = service.users().getProfile(userId="me").execute(num_retries=2)["emailAddress"]
 
     def incoming(self, known: set[str], maximum=20, allowed_senders: set[str] | None = None):
+        # None explicitly allows any sender; an empty set accepts nobody.
+        if allowed_senders is not None and not allowed_senders:
+            return
         token, remaining = None, maximum
         query = "is:unread in:inbox -from:me"
         if allowed_senders:

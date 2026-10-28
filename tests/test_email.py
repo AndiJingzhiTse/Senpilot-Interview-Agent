@@ -243,6 +243,25 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(row["state"], "ignored")
         self.assertNotIn("reply_path", row["info"])
 
+    def test_any_sender_mode_still_ignores_automatic_and_self_messages(self):
+        for kind in ("automatic", "self", "bulk", "multiple"):
+            incoming = message(sender=AGENT if kind == "self" else "new@example.com")
+            if kind == "automatic":
+                incoming["Auto-Submitted"] = "auto-replied"
+            elif kind == "bulk":
+                incoming["List-Id"] = "list.example.com"
+            elif kind == "multiple":
+                incoming.replace_header("From", "new@example.com, another@example.com")
+            job = self.enqueue(incoming.as_bytes(), source=kind)
+            process_job(self.queue, job, AGENT, None, extractor="exact", saved_report=self.report_path)
+        self.assertEqual([row["state"] for row in self.queue.rows()], ["ignored"] * 4)
+        self.assertFalse((self.source / "package").exists())
+
+    def test_empty_sender_set_does_not_enable_any_sender_mode(self):
+        job = self.enqueue()
+        process_job(self.queue, job, AGENT, set(), extractor="exact", saved_report=self.report_path)
+        self.assertEqual(self.queue.rows()[0]["state"], "ignored")
+
     def test_saved_report_must_match_the_request(self):
         job = self.enqueue(message("M12383 Exhibits").as_bytes())
         with self.assertRaisesRegex(ValueError, "does not match"):
@@ -375,6 +394,38 @@ class PipelineTests(unittest.TestCase):
         finally:
             queue.close()
 
+    def test_any_sender_cli_polls_and_replies_to_a_new_address_once(self):
+        state = self.root / "any-sender-queue"
+        incoming = message(sender="new.customer@example.org")
+        incoming["Reply-To"] = "redirect@example.com"
+        provider = Mock(address=AGENT)
+        provider.incoming.return_value = [("gmail:agent:any-request", incoming.as_bytes(), "new-thread")]
+        provider.send.return_value = {"id": "sent-new"}
+        def retrieve(matter, category, output):
+            shutil.copytree(self.source, output)
+            return self.report
+        args = ["--gmail", "--agent", AGENT, "--accept-any-sender", "--extractor", "exact",
+                "--state", str(state), "--send"]
+        with patch("senpilot.gmail.Gmail", return_value=provider), \
+                patch("senpilot.retrieval.retrieve", side_effect=retrieve) as retrieval, \
+                redirect_stdout(StringIO()):
+            self.assertEqual(email_main(args), 0)
+            self.assertEqual(email_main(args), 0)
+        self.assertEqual(retrieval.call_count, 1)
+        provider.send.assert_called_once()
+        self.assertIsNone(provider.incoming.call_args.kwargs["allowed_senders"])
+        raw, thread = provider.send.call_args.args
+        reply = BytesParser(policy=policy.default).parsebytes(raw)
+        self.assertEqual(reply["To"].addresses[0].addr_spec, "new.customer@example.org")
+        self.assertEqual(thread, "new-thread")
+        self.assertEqual(len(list(reply.iter_attachments())), 1)
+
+    def test_cli_requires_one_explicit_sender_policy(self):
+        for policy_args in ([], ["--accept-any-sender", "--allow-sender", SENDER]):
+            with self.subTest(args=policy_args), redirect_stderr(StringIO()), self.assertRaises(SystemExit) as error:
+                email_main(["--gmail", *policy_args])
+            self.assertEqual(error.exception.code, 2)
+
 
 class GmailTests(unittest.TestCase):
     def service(self):
@@ -407,6 +458,17 @@ class GmailTests(unittest.TestCase):
         self.assertEqual(result, [(f"gmail:{AGENT}:new", raw, "thread-1")])
         self.assertEqual(messages.list.call_args.kwargs["pageToken"], "next")
         self.assertIn("from:" + SENDER, messages.list.call_args.kwargs["q"])
+
+    def test_any_sender_poll_has_no_address_filter_and_empty_set_polls_nothing(self):
+        service = self.service()
+        messages = service.users.return_value.messages.return_value
+        messages.list.return_value.execute.return_value = {}
+        provider = Gmail(Path("unused"), service=service)
+        self.assertEqual(list(provider.incoming(set(), allowed_senders=None)), [])
+        self.assertEqual(messages.list.call_args.kwargs["q"], "is:unread in:inbox -from:me")
+        messages.list.reset_mock()
+        self.assertEqual(list(provider.incoming(set(), allowed_senders=set())), [])
+        messages.list.assert_not_called()
 
     def test_token_with_only_read_access_is_rejected_before_refresh(self):
         with TemporaryDirectory() as directory:

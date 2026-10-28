@@ -65,7 +65,7 @@ Andi selected Windows background activation. Task SenpilotAgent is now registere
 See the [deployment guide](docs/deployment.md) and [validation record](docs/deployment-validation.md).
 
 The background task processed a fresh M12205 request using DeepSeek, downloaded ten documents without failures, and sent a verified ZIP through Gmail. Andi confirmed receipt and successfully opened the ZIP.
-The [requirements review](docs/requirements-review.md) and [demo and handoff guide](docs/demo.md) are prepared. Andi chose to retain the oversized ZIP notice and disclose that those results do not fulfill the ZIP attachment requirement. Evaluator access instructions explain the sender list.
+The [requirements review](docs/requirements-review.md) and [demo and handoff guide](docs/demo.md) are prepared. Andi chose to retain the oversized ZIP notice and disclose that those results do not fulfill the ZIP attachment requirement. Andi subsequently chose to accept requests from any sender, so evaluators do not need their addresses added manually.
 The active Windows task now uses Python 3.12.16 after regression and provider checks; the previous environment is retained for rollback. See [runtime migration](docs/runtime-upgrade.md).
 An actual user logon or host reboot has not been tested.
 The alternative Linux image still requires a real Docker build and runtime test on a selected host.

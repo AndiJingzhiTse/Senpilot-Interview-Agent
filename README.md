@@ -6,6 +6,7 @@ The email worker supports a dedicated Gmail inbox and validated DeepSeek request
 The [deployment package](docs/deployment.md) adds supervision, logs, health checks, and persistent state for Windows or a Linux container.
 
 The Windows task is active, and Andi Tse confirmed a complete email request and ZIP receipt. See the [requirements review](docs/requirements-review.md) and [demo and evaluator handoff](docs/demo.md).
+The active inbox accepts requests from any sender and replies to the original From address. Requests must remain unread in the Inbox until polled.
 **Known limitation:** a ZIP that exceeds the configured email size limit receives a notice without its files. This is disclosed partial coverage of the assignment's attachment requirement; no download link fallback is implemented.
 
 ```mermaid
