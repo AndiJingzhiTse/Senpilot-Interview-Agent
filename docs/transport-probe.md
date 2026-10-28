@@ -1,6 +1,7 @@
 # Download transport probe
 
 On October 27, 2026, browser preparation followed by HTTP retrieval succeeded for three public PDFs across two matters and two category layouts.
+The selected default is now full browser automation. HTTP comparison remains available through an explicit diagnostic flag.
 This is a reproducible investigation of one file at a time, not the complete assignment agent.
 
 ## Verified behavior
@@ -53,23 +54,28 @@ python -m venv .venv
 .\.venv\Scripts\python.exe scripts/probe_download_transport.py
 ```
 
-To reproduce the other cases:
+The default command downloads and validates one PDF through Playwright, without intercepting requests or invoking the HTTP comparison client.
+To run the same browser flow on the other cases:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/probe_download_transport.py --row-text 102454
 .\.venv\Scripts\python.exe scripts/probe_download_transport.py --matter M10431 --category Transcripts --row-text 'September 13, 2022'
 ```
 
-Each run creates a new directory under `artifacts/transport/` containing `browser.pdf`, `http.pdf` when successful, and `report.json`.
+Each default run creates a new directory under `artifacts/browser/` containing `browser.pdf` and `report.json`.
+To reproduce the earlier HTTP experiments, add `--compare-http` to any command. Diagnostic runs use `artifacts/transport/` and additionally save `http.pdf` when successful.
 An optional `--output` argument selects a directory that must not already exist.
 Reports record category counts, the selected row, PDF validation, hashes, statuses, and timings. They do not save cookies or temporary export URLs.
 
 ## Decision and remaining work
 
-Use browser automation for discovery and export preparation, with HTTP retrieval through the same browser context as the preferred transport to evaluate in the actual downloader.
+Use browser automation for discovery, export preparation, and the actual download. Playwright waits for its download event and saves the completed file.
 Keep the export dialog open until the transfer completes and the file is validated.
-If HTTP fails, prepare a fresh export and use a normal browser download; the first export's button may already be disabled.
-The comparison probe retains its successful browser baseline and reports browser_download as the usable transport if the HTTP replacement fails.
+The HTTP experiment demonstrated compatibility but retained the per file UI work and did not show an overall speed advantage that justified its additional interception and session handling.
+The optional comparison mode retains its successful browser baseline and reports browser_download as the usable transport if the HTTP replacement fails.
+
+After changing the default, browser mode was verified on M12205 document 102674 and the M10431 September 13 Transcript.
+Both produced valid PDFs with the same hashes as the previous experiments, including the normalized Transcript filename.
 
 The next implementation stage needs reusable retrieval functions, deterministic selection and list traversal, handling for unavailable entries, and retries with explicit failure reporting.
 Audio bytes, large attachments, all ten files in one request, ZIP creation, and email have not been tested by this PDF probe.

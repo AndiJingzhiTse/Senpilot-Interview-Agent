@@ -17,12 +17,30 @@ Routine reversible work can continue within the current stage. Raise questions w
 
 ## Stages
 
+The selected download approach is browser automation with Playwright download events and save_as. HTTP comparison remains an optional diagnostic tool.
+
 1. Inspect the public website and record evidence and open questions.
 2. Implement matter lookup, metadata extraction, category counts, and document retrieval.
 3. Validate downloaded files and create the ZIP.
 4. Connect email and validated AI request extraction.
 5. Test the complete workflow and failure cases.
 6. Prepare setup instructions and a reproducible demonstration.
+
+## Next milestone
+
+Build a local retrieval command that accepts a matter number and one of the five document categories, collects the matter overview metadata and category counts, and downloads up to ten available files using the browser.
+
+Acceptance checks:
+
+- Confirm the displayed matter number before collecting results.
+- Preserve source labels for dates and distinguish missing metadata from empty strings or invented values.
+- Traverse rows beyond the first viewport using a documented selection order and stable file identities.
+- Retain original names and source metadata while preventing local filename collisions.
+- Report empty categories, unavailable entries, failed downloads, and actual successful counts explicitly.
+- Complete each browser download before closing its export dialog, retaining the Transcript filename normalization.
+
+Validate the command on a category with more than ten entries, a category with fewer than ten, an empty category, and a nonexistent matter. Include a Recording sample before declaring all five categories supported.
+Then add ZIP packaging in stage 3 and email handling in stage 4.
 
 ## References
 

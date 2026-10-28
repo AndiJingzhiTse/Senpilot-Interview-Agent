@@ -1,4 +1,4 @@
-"""Compare browser and HTTP transport for one public PDF, without email."""
+"""Download one public PDF through the browser, with optional HTTP diagnostics."""
 
 import argparse
 from datetime import datetime, timezone
@@ -164,17 +164,32 @@ def compare_transports(playwright, page, row, output, matter):
     return results
 
 
+def download_with_browser(page, row, output, matter):
+    """Keep the export open until Playwright has saved and validated the PDF."""
+    dialog, button, export_name = prepare_export(page, row)
+    _, _, browser = browser_baseline(page, button, output, matter)
+    dialog.get_by_role("button", name="Close", exact=True).click()
+    expect(dialog).not_to_be_visible()
+    return {
+        "browser": browser, "export_filename": export_name,
+        "usable_transport": "browser_download",
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--matter", default="M12205")
     parser.add_argument("--category", choices=CATEGORIES[:-1], default="Other Documents")
     parser.add_argument("--row-text", default="102674", help="Exact text in one visible public PDF row")
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--compare-http", action="store_true", help="Run optional HTTP transport diagnostics")
     args = parser.parse_args()
     if re.fullmatch(r"M\d{5}", args.matter) is None:
         parser.error("--matter must be M followed by five digits")
     started = datetime.now(timezone.utc)
-    output = args.output or Path("artifacts/transport") / started.strftime("%Y%m%dT%H%M%S%fZ")
+    mode = "transport_comparison" if args.compare_http else "browser_download"
+    directory = "transport" if args.compare_http else "browser"
+    output = args.output or Path("artifacts") / directory / started.strftime("%Y%m%dT%H%M%S%fZ")
     output.mkdir(parents=True, exist_ok=False)
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(channel="chrome", headless=True)
@@ -183,11 +198,15 @@ def main():
             page.set_default_timeout(20000)
             counts = open_matter(page, args.matter)
             row, description = select_public_row(page, args.category, args.row_text)
+            if args.compare_http:
+                results = compare_transports(playwright, page, row, output, args.matter)
+            else:
+                results = download_with_browser(page, row, output, args.matter)
             result = {
-                "started_utc": started.isoformat(), "matter": args.matter,
+                "started_utc": started.isoformat(), "matter": args.matter, "mode": mode,
                 "category": args.category, "row_text": description,
                 "category_counts": counts,
-                "results": compare_transports(playwright, page, row, output, args.matter),
+                "results": results,
             }
             (output / "report.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
             print(json.dumps(result, indent=2))
