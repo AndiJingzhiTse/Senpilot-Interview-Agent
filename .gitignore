@@ -1,0 +1,22 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+credentials*.json
+token*.json
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Generated retrieval and browser artifacts
+downloads/
+artifacts/
+tmp/
+playwright-report/
+test-results/
+*.zip
