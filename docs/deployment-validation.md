@@ -1,6 +1,6 @@
 # Deployment validation
 
-Checks were performed on October 28, 2026, America/Toronto. The existing terminal worker was not stopped, replaced, or used to send additional requests during this work.
+Checks were performed on October 28, 2026, America/Toronto. Packaging checks left the original terminal worker untouched. During the subsequent authorized Windows activation, Andi stopped that worker and saved the key locally.
 
 ## Live evidence audit
 
@@ -48,6 +48,18 @@ For offline repetition, pass `--schema artifacts/deployment/compose-schema.json`
 
 The local environment is Windows with Python 3.10.11 and installed Chrome. The new image targets Linux amd64 and Python 3.12.
 Docker is absent here, so the image has not been built or executed. The POSIX lock branch, Linux dependency installation, and mounted file permissions still need validation on that target.
-The scheduled task has not been registered, so actual logon startup and Task Scheduler restart behavior remain pending.
+The scheduled task has since been registered and started. Background startup and a controlled task restart passed; a fresh request test is pending below. An actual logoff or reboot and a forced crash of the installed task were not performed.
 Application recovery tests do not establish availability during host failure, expired provider grants, disk exhaustion, or an operator's intentional shutdown.
-No host has been purchased or provisioned, and no deployment has replaced the user's current worker.
+No remote host has been purchased or provisioned. The local task now replaces the former terminal worker.
+
+## Windows activation
+
+Task **SenpilotAgent** runs through the project's `pythonw.exe` under the current Windows user. Its enabled trigger is user logon.
+Settings were read back from Task Scheduler: five failure restarts with a one minute interval, no execution time limit, and IgnoreNew for additional instances.
+
+The actual local preflight passed with Chrome 155.0.8059.85. Service health reported running, and the first poll preserved all three existing sent records.
+A controlled Stop-ScheduledTask operation stopped both Python processes. The next local preflight could acquire the state locks, and Start-ScheduledTask started a new healthy process.
+All three original Gmail message IDs and processing attempt counts remained unchanged. Details are saved in ignored `artifacts/deployment/windows-activation.json`.
+
+The background Google client emitted a Python 3.10.11 support warning. It did not prevent startup or polling, but native runtime migration remains a followup.
+The final new request and recipient receipt test under this task is pending.

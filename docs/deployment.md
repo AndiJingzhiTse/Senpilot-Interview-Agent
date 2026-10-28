@@ -3,8 +3,9 @@
 The service wrapper runs the existing Gmail worker with a persistent queue, rotating logs, recovery after crashes, and a local health heartbeat.
 It can run as a Windows task or inside the supplied Linux container. Only one installation should actively process the agent mailbox.
 
-The package is prepared. No background task has been registered and no container has been launched by this milestone.
-The existing terminal worker remains under Andi Tse's control.
+The Windows task **SenpilotAgent** is registered, running, and passed a controlled restart on October 28, 2026.
+It uses the existing live queue and Gmail token. The prior terminal worker was stopped normally during handover.
+The Linux container remains an alternative package and has not been built or launched here.
 
 ## Local configuration and key storage
 
@@ -17,7 +18,7 @@ Paths in this JSON are resolved relative to the configuration file. The example 
 - Gmail token: `artifacts/oauth/token.json`.
 - DeepSeek key file: `artifacts/deploy/deepseek.key`.
 
-Before activation, stop the existing terminal worker with Ctrl+C and wait for it to exit.
+For a new activation or migration, stop any existing terminal worker with Ctrl+C and wait for it to exit.
 In a terminal where `DEEPSEEK_API_KEY` is already set, save that key without displaying it:
 
 ```powershell
@@ -152,5 +153,8 @@ The existing oversized archive policy still applies. Deployment does not add hos
 
 ## Remaining host acceptance
 
-Choose Windows activation or a Linux host. Then verify an actual background startup, a new email request, its received attachment, and recovery after a controlled restart on that target.
+Windows registration, background startup, Gmail polling, and a controlled stop and start have been verified. The existing three sent replies retained their original message IDs and attempt counts after restart.
+The logon trigger and failure restart settings are configured, but an actual Windows logoff or reboot was not performed.
+The final new email check under the background task is recorded in the validation record when completed.
+The installed Google client also reports Python 3.10.11 as unsupported; a maintained native Python environment is a followup migration. The current task started and polled successfully with the existing environment.
 The [validation record](deployment-validation.md) distinguishes the local checks from target checks still pending.

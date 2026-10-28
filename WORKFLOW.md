@@ -61,11 +61,12 @@ The application checks a configurable encoded message size limit before sending.
 
 Andi reported successful live handling. The existing journal records two successful ten document replies and one clarification reply, and the saved attachments passed the deployment audit.
 The portable service package now includes persistent state, OS locks, bounded processing recovery, safe handling of uncertain sends, logs, health checks, a Windows task definition, and a Linux container definition.
-The existing foreground worker has not been replaced. See the [deployment guide](docs/deployment.md) and [validation record](docs/deployment-validation.md).
+Andi selected Windows background activation. Task SenpilotAgent is now registered and running against the original queue and token. Local startup, Gmail polling, and a controlled restart passed without repeating any of the three prior sends.
+See the [deployment guide](docs/deployment.md) and [validation record](docs/deployment-validation.md).
 
-Choose the activation target, configure its local key source, and verify startup and a new email request there.
-The Linux image still requires a real Docker build and runtime test; the Windows task still requires registration and target acceptance.
-After activation, finish the assignment demonstration and final reproducibility notes.
+Complete a new request and recipient receipt check under the background task, then finish the assignment demonstration and final reproducibility notes.
+An actual user logon or host reboot has not been tested. Native Python runtime migration is a followup because the Google client reports the current Python 3.10.11 environment as unsupported.
+The alternative Linux image still requires a real Docker build and runtime test on a selected host.
 
 ## References
 
