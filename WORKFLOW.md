@@ -42,11 +42,18 @@ Acceptance checks:
 Validate the command on a category with more than ten entries, a category with fewer than ten, an empty category, and a nonexistent matter. Include a Recording sample before declaring all five categories supported.
 These cases have been exercised; see the [live checks](docs/retrieval-validation.md) and [run instructions](README.md).
 
+## Completed ZIP milestone
+
+ZIP packaging now uses only the report's completed file list and preserves original filenames and source metadata in a manifest.
+It verifies archive entry counts, source and archive file hashes, and archive size. Empty results produce a summary without an empty ZIP; partial results remain labelled partial.
+The retrieval CLI packages automatically, and a separate command packages saved reports without contacting the website.
+See the [packaging checks](docs/packaging-validation.md) for test evidence and the observed Recording archive size.
+
 ## Next milestone
 
-Add ZIP packaging in stage 3 using only the report's completed file list.
-Verify archive entry counts and file hashes, preserve clear source filename mappings, and report archive size before email delivery is added.
-Handle empty results and partial retrievals explicitly. The large Recording samples will need an attachment size policy when the email provider is chosen in stage 4.
+Connect email and validated request extraction in stage 4, starting with the chosen email provider and a concrete delivery size policy.
+The observed Recording ZIP is about 392 MB, so attachment handling must account for files that exceed the provider's limit.
+Before unattended use, add a shared request queue and explicit handling of site access blocks and rate limits.
 
 ## References
 

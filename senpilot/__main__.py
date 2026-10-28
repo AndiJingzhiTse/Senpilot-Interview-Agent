@@ -5,11 +5,13 @@ import re
 import sys
 
 from .models import CATEGORIES
+from .package import print_summary
+from .packaging import PackagingError, package_report
 from .retrieval import retrieve
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Retrieve up to ten regulatory documents through the browser")
+    parser = argparse.ArgumentParser(description="Retrieve up to ten regulatory documents and create a verified ZIP")
     parser.add_argument("matter", help="Matter number, for example M12205")
     parser.add_argument("category", choices=CATEGORIES)
     parser.add_argument("--limit", type=int, default=10, help="Successful file limit from 0 to 10; 0 lists metadata")
@@ -31,6 +33,12 @@ def main() -> int:
     print(f"Report: {output / 'report.json'}")
     if report.get("error"):
         print(report["error"]["message"], file=sys.stderr)
+    try:
+        package = package_report(output / "report.json")
+    except (PackagingError, OSError) as error:
+        print(f"Packaging failed: {error}", file=sys.stderr)
+        return 2
+    print_summary(package, output / "package")
     return 0 if report["status"] in {"complete", "empty", "metadata_only"} else 2
 
 

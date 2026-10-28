@@ -1,7 +1,7 @@
 # Senpilot regulatory document retrieval
 
 The local command collects matter metadata and downloads up to ten files from the Nova Scotia public documents website using browser automation.
-It produces a JSON report and the downloaded files; ZIP packaging and email are the next stages.
+It produces a JSON report, downloaded files, and a verified ZIP with a manifest. Email integration is the next stage.
 
 ## Setup
 
@@ -32,10 +32,40 @@ Default output is `artifacts/retrieval/<request>/`:
 - `report.json` contains matter metadata, source date labels, all five category counts, the selected category's catalog, downloaded file details, skipped entries, failures, and format warnings.
 - `files/` contains completed downloads, with safe names and an identity prefix to prevent collisions. Original names are preserved in the report.
 - `incomplete/` holds temporary browser and validation files and is excluded from the completed file list.
+- `package/documents.zip` contains the completed files and `manifest.json`, when at least one file is available.
+- `package/package.json` records the packaging status, ZIP size and SHA256, and the manifest. Empty results have this summary without an empty ZIP.
 
 The report is saved after each attempted file so a later error retains the successful results.
 Exit code 0 means complete, empty, or metadata only; code 2 means partial, unavailable, nonexistent matter, or another reported retrieval error.
+Packaging failures also return code 2, preserving the retrieval report and source files.
 Unexpected programming errors still raise a traceback and leave an error report.
+
+## Package a saved retrieval
+
+Packaging runs automatically after the retrieval command. To package an older saved report without opening a browser or downloading again:
+
+```powershell
+.\.venv\Scripts\python.exe -m senpilot.package artifacts/retrieval/release-ten-other-documents/report.json
+```
+
+The default destination is a new `package/` directory beside that report.
+Existing destinations are refused. Use `--output artifacts/packages/review` to choose another fresh directory.
+
+Only the report's completed file list is included, with a maximum of ten documents. Unlisted files and incomplete transfers are excluded.
+The manifest preserves matter metadata, category counts, original filenames, source identities, format warnings, skipped entries, and failures.
+Archive paths retain the unique local filenames, so repeated original names do not overwrite each other.
+
+Packaging checks each source file against its recorded size and SHA256 while streaming it into the ZIP.
+It then reads every archive entry back to verify the file count, manifest, sizes, hashes, and ZIP CRC checks before publishing the final archive.
+Missing or changed files fail packaging, remove the temporary ZIP, and leave an error summary. The original retrieval is never rewritten.
+Files must remain within the retrieval's `files/` directory, and unsafe or duplicate archive paths are rejected.
+
+The package status is `ready` for a complete retrieval with files, `partial` for a partial, failed, or interrupted retrieval that retained files, and `no_files` when there are no completed files.
+The original retrieval status remains explicit in the manifest and package summary, including empty, unavailable, and nonexistent matter results.
+The standalone packaging command preserves the retrieval exit convention: code 0 for complete, empty, or metadata only results; code 2 otherwise or when packaging fails.
+
+Compression and verification stream file data with bounded memory and support ZIP64.
+The reported ZIP size is its actual size in bytes; it does not include email encoding overhead or imply that the archive fits a provider's attachment limit.
 
 ## Selection and identity
 
@@ -65,7 +95,7 @@ PDF text that lacks the matter number is recorded without rejecting an otherwise
 WAV source header inconsistencies are reported as warnings after the browser confirms transfer completion; file bytes are preserved and an unreliable duration is omitted.
 Audio is not fully decoded or played during validation.
 
-The tested Recording samples were 411 MB and 472 MB WAV files. ZIP and email handling will need to account for these actual sizes.
+The tested Recording samples were 411 MB and 472 MB WAV files. The latter produced a 392 MB ZIP, so email handling still needs a delivery size policy.
 
 ## Checks and diagnostics
 
@@ -77,4 +107,4 @@ The tested Recording samples were 411 MB and 472 MB WAV files. ZIP and email han
 
 Tests include real Chrome downloads from a local test server, including a connection that stalls after 32 KB.
 The optional [transport probe](docs/transport-probe.md) shares browser helpers with the retrieval command and retains HTTP comparison for diagnostics.
-See the [live retrieval checks](docs/retrieval-validation.md), [website inspection](docs/site-inspection.md), and [working plan](WORKFLOW.md).
+See the [packaging checks](docs/packaging-validation.md), [live retrieval checks](docs/retrieval-validation.md), [website inspection](docs/site-inspection.md), and [working plan](WORKFLOW.md).
