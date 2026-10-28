@@ -144,7 +144,7 @@ def main(argv=None):
     except Exception as error:
         message = str(error) if isinstance(error, (ConfigurationError, WorkerLockError)) else type(error).__name__
         print(f"Service configuration failed: {message}", file=sys.stderr)
-        return 78
+        return 73 if isinstance(error, WorkerLockError) else 78
     stop = threading.Event()
     def request_stop(signum, frame):
         if not stop.is_set():

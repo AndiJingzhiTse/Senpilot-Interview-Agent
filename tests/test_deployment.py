@@ -69,6 +69,11 @@ class DeploymentTests(unittest.TestCase):
                 preflight(self.config)
             browser.assert_not_called()
 
+    def test_preflight_reports_busy_without_contacting_providers(self):
+        with worker_lock(self.config.state), patch("senpilot.service.preflight") as check, patch("sys.stderr", StringIO()):
+            self.assertEqual(service_main(["--config", str(self.config_path), "--check"]), 73)
+        check.assert_not_called()
+
     def test_key_file_accepts_powershell_utf8_bom(self):
         self.config.key_file.write_bytes(b"\xef\xbb\xbf" + self.secret.encode() + b"\r\n")
         self.assertEqual(load_key(self.config), self.secret)

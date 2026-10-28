@@ -8,7 +8,9 @@ from logging.handlers import RotatingFileHandler
 import math
 import os
 from pathlib import Path
+import platform
 import sqlite3
+import sys
 import threading
 import time
 
@@ -175,7 +177,8 @@ class Heartbeat:
         self.state = state
         self.path = state / "service" / "heartbeat.json"
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.values = {"phase": "starting", "restarts": 0, "pid": os.getpid()}
+        self.values = {"phase": "starting", "restarts": 0, "pid": os.getpid(),
+                       "python_version": platform.python_version(), "python_executable": sys.executable}
         self.lock = threading.Lock()
 
     def update(self, **fields):
