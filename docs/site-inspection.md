@@ -181,16 +181,19 @@ Implementation consequence: handle the second download button, save to a request
 - Retrieve the first 10 available rows in a documented explicit sort order, subject to a verified traversal mechanism.
 - Use deterministic extraction and download logic; reserve AI for interpreting email requests and composing language grounded in extracted values.
 
-## Next implementation checkpoint
+## Initial implementation checkpoint
 
 Build a small browser probe that opens M12205, verifies the displayed matter number, and extracts the overview metadata and five category counts.
 Evaluate Python with Playwright against the actual DOM and field commit behavior before expanding to downloads.
 Success means a structured result grounded in the live page, no hardcoded example counts, and a clear failure for a mismatched or nonexistent matter.
 Only then add the two observed export flows, row traversal, and security handling in separate reviewable changes.
 
+Followup: the [download transport probe](transport-probe.md) now implements browser lookup, verifies the matter and five counts, and tests browser plus HTTP retrieval for individual public PDFs.
+See that report for the successful same session downloads, expiry checks, Transcript filename fix, and remaining scope.
+
 ## API and direct download comparison
 
-Additional read only checks on October 27, 2026:
+Initial read only checks on October 27, 2026, before the successful same session probe:
 
 | Request without credentials or browser cookies | Observed result |
 | --- | --- |
@@ -219,7 +222,7 @@ Proposed comparison for the browser probe:
 3. Verify that both return the same file bytes, then assess timing and repeatability before choosing the transport.
 
 Playwright's [APIRequestContext](https://playwright.dev/python/docs/api/class-apirequestcontext) can share cookies with its browser context.
-That makes a browser plus HTTP approach technically possible, but its compatibility with this website is still unverified.
+That made a browser plus HTTP approach a candidate for testing. Its compatibility with individual public PDFs was subsequently verified in the [transport probe](transport-probe.md).
 It would still need browser navigation to discover files and prepare exports unless a usable data endpoint is found.
 A supported accessible API would be preferable for structured discovery and extraction; imitating undocumented WebDirect requests may be more fragile than using the normal interface.
-No speed benchmark has been performed. Fewer UI operations may reduce overhead, but direct HTTP alone does not establish faster transfer of the same file bytes.
+The subsequent probe records transfer timings but does not establish an overall speed advantage. Fewer UI operations may reduce overhead, but direct HTTP alone does not establish faster transfer of the same file bytes.
