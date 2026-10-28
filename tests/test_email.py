@@ -370,7 +370,8 @@ class PipelineTests(unittest.TestCase):
         queue = JobQueue(state)
         try:
             self.assertEqual(queue.rows()[0]["state"], "sent")
-            self.assertFalse((state / "worker.lock").exists())
+            with worker_lock(state):
+                pass  # The persistent file remains, but its OS lock was released.
         finally:
             queue.close()
 

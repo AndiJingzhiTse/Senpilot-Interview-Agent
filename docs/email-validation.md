@@ -3,7 +3,8 @@
 ## Current evidence
 
 Email handling was tested with local `.eml` requests, saved retrievals, mocked Gmail and DeepSeek calls, and Chrome fixtures for access blocks.
-No live Gmail authorization, real DeepSeek inference, or actual email delivery has been performed. The configured addresses come from Andi Tse's instructions.
+At the original email milestone, live authorization and delivery had not yet been exercised.
+Andi subsequently reported successful ongoing live handling. The live journal and saved attachments were audited during the [deployment milestone](deployment-validation.md), with two ten document replies and one clarification reply recorded as sent.
 
 | Saved request | Prepared result | MIME message bytes |
 | --- | --- | ---: |
@@ -37,12 +38,10 @@ Run with the email dependencies installed:
 
 The full suite ran 64 tests: 63 passed and one filesystem symlink test was skipped because this Windows session does not permit creating symbolic links.
 
-## Remaining live acceptance
+## Live acceptance and next checks
 
-1. Configure Gmail OAuth for andi.xie241@gmail.com and a DeepSeek API key locally using the [setup guide](email-setup.md).
-2. Send the assignment's sample request from andi.xie24@gmail.com to the agent inbox.
-3. Confirm the extracted fields, retrieval report, attachment size, and local reply.
-4. Exercise Gmail delivery and verify that the recipient can open the ZIP and its manifest.
+Gmail OAuth is configured and live send records exist for the selected accounts. Andi reported successful receipt, and the saved MIME and archive checks passed.
+The next acceptance check is the same workflow under the selected background deployment, including a controlled restart.
 
 The Recording exception currently sends a truthful size notice rather than fulfilling the assignment's ZIP attachment requirement for an oversized result.
-Hosting or another delivery policy would be a separate decision. Provider quotas, live account restrictions, and deployment supervision remain unverified.
+Hosting or another delivery policy would be a separate decision. Provider quotas and target deployment behavior remain unverified.

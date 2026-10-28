@@ -128,7 +128,9 @@ The sender list bounds this local demonstration's intake; it is not identity aut
 
 An interrupted or failed processing job can be explicitly retried with `--retry-job FULL_JOB_ID --agent andi.xie241@gmail.com --allow-sender andi.xie24@gmail.com --state artifacts/email/live`.
 For an uncertain send, inspect the agent's Sent mail using the reply's Message-ID before any manual reconciliation. Neither `--retry-job` nor a restart repeats these sends.
-After a hard process termination, remove a stale `worker.lock` only after verifying that no worker still owns the state directory.
+The current worker uses an OS lock that releases when the process exits. Its lock file remains on disk and must not be deleted to bypass another worker.
+When upgrading from the original lock format, stop the old worker normally first. The new worker deliberately refuses to adopt that legacy file.
+The [deployment wrapper](deployment.md) also offers bounded recovery of interrupted processing jobs, without repeating uncertain sends.
 
 Recognized site challenges and HTTP 403 or 429 responses stop retrieval and persist a pause for remaining queued requests, including after restarting the worker.
 Inspect and resolve the block before using `--resume-site` with a processing command. The worker makes no attempt to bypass it.

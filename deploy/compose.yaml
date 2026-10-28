@@ -1,0 +1,40 @@
+name: senpilot
+services:
+  agent:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    platform: linux/amd64
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 60s
+    shm_size: 1gb
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - type: bind
+        source: ../artifacts/email/live
+        target: /data
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ../artifacts/oauth
+        target: /oauth
+        bind:
+          create_host_path: false
+    secrets:
+      - deepseek_api_key
+    healthcheck:
+      test: [CMD, python, -m, senpilot.service, --config, /etc/senpilot/agent.json, --health]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+secrets:
+  deepseek_api_key:
+    file: ../artifacts/deploy/deepseek.key

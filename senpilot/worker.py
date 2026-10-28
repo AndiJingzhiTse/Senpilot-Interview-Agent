@@ -3,6 +3,7 @@
 from dataclasses import asdict
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 import time
 
@@ -15,6 +16,9 @@ from .requests import ExtractionError, RequestError, extract_request
 def process_job(queue, job: dict, agent_address: str, allowed_senders: set[str], *, extractor="deepseek",
                 saved_report: Path | None = None, max_message_bytes=20_000_000, retrieve=None):
     info = job["info"]
+    info["extractor"] = extractor
+    if extractor == "deepseek":
+        info["extraction_model"] = os.environ.get("DEEPSEEK_MODEL", "deepseek-flash")
     if saved_report is None and info.get("saved_report"):
         saved_report = Path(info["saved_report"])
     if saved_report is not None:

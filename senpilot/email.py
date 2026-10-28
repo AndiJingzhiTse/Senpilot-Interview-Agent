@@ -29,7 +29,7 @@ def show_status(queue):
     return 2 if queue.site_paused() or unsuccessful else 0
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description="Process email requests with a durable local queue")
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--eml", type=Path, help="Import a local request without connecting to Gmail")
@@ -48,11 +48,14 @@ def main():
     parser.add_argument("--watch", action="store_true", help="Continue polling until stopped; requires --gmail")
     parser.add_argument("--poll-seconds", type=float, default=60, help="Seconds between inbox polls, minimum 30")
     parser.add_argument("--resume-site", action="store_true", help="Clear a local pause after resolving a website access block")
-    args = parser.parse_args()
+    parser.add_argument("--recover-processing", action="store_true", help="Recover interrupted processing, never uncertain sends; requires --gmail")
+    args = parser.parse_args(argv)
     if args.send and not args.gmail:
         parser.error("--send requires --gmail")
     if args.watch and not args.gmail:
         parser.error("--watch requires --gmail")
+    if args.recover_processing and not args.gmail:
+        parser.error("--recover-processing requires --gmail")
     if args.status and args.resume_site:
         parser.error("--status does not change the site pause; use --resume-site with a processing mode")
     if args.saved_report and not args.eml:
@@ -70,6 +73,12 @@ def main():
                 queue.resume_site()
             if args.status:
                 return show_status(queue)
+            if args.recover_processing:
+                recovery = queue.recover_interrupted()
+                print(f"Processing recovery: {recovery}", flush=True)
+                if queue.rows("send_uncertain"):
+                    print("Sending requires reconciliation before automatic operation can continue.", file=sys.stderr)
+                    return 2
             allowed = {mailbox(value).casefold() for value in args.allow_sender}
             provider = None
             if args.gmail:

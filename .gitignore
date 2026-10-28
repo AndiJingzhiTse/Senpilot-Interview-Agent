@@ -6,6 +6,7 @@ credentials*.json
 token*.json
 credentials*.json.tmp
 token*.json.tmp
+deploy/agent.json
 
 # Python environments and caches
 .venv/

@@ -59,10 +59,13 @@ The application checks a configurable encoded message size limit before sending.
 
 ## Next milestone
 
-Complete stage 4's live acceptance: configure the Gmail OAuth client and DeepSeek key locally, then verify a real request from andi.xie24@gmail.com through to delivery from andi.xie241@gmail.com.
-The implementation has not yet been authenticated against those live services or used to send an email.
-See the [setup guide](docs/email-setup.md) and [validation evidence](docs/email-validation.md).
-After live acceptance, complete the broader workflow demonstration and deployment instructions in stages 5 and 6.
+Andi reported successful live handling. The existing journal records two successful ten document replies and one clarification reply, and the saved attachments passed the deployment audit.
+The portable service package now includes persistent state, OS locks, bounded processing recovery, safe handling of uncertain sends, logs, health checks, a Windows task definition, and a Linux container definition.
+The existing foreground worker has not been replaced. See the [deployment guide](docs/deployment.md) and [validation record](docs/deployment-validation.md).
+
+Choose the activation target, configure its local key source, and verify startup and a new email request there.
+The Linux image still requires a real Docker build and runtime test; the Windows task still requires registration and target acceptance.
+After activation, finish the assignment demonstration and final reproducibility notes.
 
 ## References
 

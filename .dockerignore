@@ -1,0 +1,11 @@
+**
+!.dockerignore
+!requirements.txt
+!requirements-email.txt
+!senpilot/
+!senpilot/**
+!deploy/
+!deploy/Dockerfile
+!deploy/container.json
+senpilot/**/__pycache__
+senpilot/**/*.pyc

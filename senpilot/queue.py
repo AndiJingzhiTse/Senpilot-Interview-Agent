@@ -3,24 +3,52 @@
 from contextlib import contextmanager
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 import sqlite3
 
 
+class WorkerLockError(RuntimeError):
+    pass
+
+
 @contextmanager
-def worker_lock(root: Path):
+def worker_lock(root: Path, filename="worker.lock"):
+    """Use an OS lock that is released even after a hard process termination."""
     root.mkdir(parents=True, exist_ok=True)
-    path = root / "worker.lock"
+    path = root / filename
+    stream = os.fdopen(os.open(path, os.O_RDWR | os.O_CREAT, 0o600), "r+b", buffering=0)
+    locked = False
     try:
-        stream = path.open("x", encoding="utf-8")
-    except FileExistsError as error:
-        raise RuntimeError("A worker lock exists; check for another worker before removing a stale lock") from error
-    try:
-        with stream:
-            stream.write("One worker may retrieve and send at a time.\n")
-            yield
+        try:
+            prefix = stream.read(100)
+            if prefix.startswith(b"One worker may retrieve"):
+                raise WorkerLockError("A legacy worker lock exists; stop the old worker before starting this version")
+            if os.name == "nt":
+                import msvcrt
+                if not prefix:
+                    stream.seek(0)
+                    stream.write(b"\0")
+                stream.seek(0)
+                msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            locked = True
+        except OSError as error:
+            raise WorkerLockError("A worker lock is held by another process") from error
+        stream.seek(0)
+        stream.write(json.dumps({"format": "senpilot.lock.v2", "pid": os.getpid()}).encode())
+        stream.truncate()
+        yield
     finally:
-        path.unlink()
+        if locked:
+            stream.seek(0)
+            if os.name == "nt":
+                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+        stream.close()
 
 
 class JobQueue:
@@ -83,3 +111,24 @@ class JobQueue:
     def resume_site(self):
         with self.db:
             self.db.execute("DELETE FROM settings WHERE name='site_pause'")
+
+    def recover_interrupted(self, max_attempts=3) -> dict:
+        """Caller must own worker_lock. Never requeue a send that may have happened."""
+        counts = {"requeued": 0, "exhausted": 0, "uncertain": 0}
+        with self.db:
+            for row in self.db.execute("SELECT id,state,info,attempts FROM jobs WHERE state IN ('processing','sending')").fetchall():
+                info = json.loads(row["info"])
+                if row["state"] == "sending":
+                    state = "send_uncertain"
+                    info["error_type"] = "InterruptedSend"
+                    counts["uncertain"] += 1
+                elif row["attempts"] >= max_attempts:
+                    state = "failed"
+                    info.update(error_type="RecoveryLimit", error="Automatic processing recovery limit reached.")
+                    counts["exhausted"] += 1
+                else:
+                    state = "pending"
+                    info = {name: info[name] for name in ("thread_id", "saved_report") if name in info}
+                    counts["requeued"] += 1
+                self.db.execute("UPDATE jobs SET state=?,info=? WHERE id=?", (state, json.dumps(info), row["id"]))
+        return counts

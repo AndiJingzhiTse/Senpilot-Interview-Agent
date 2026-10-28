@@ -1,0 +1,13 @@
+{
+  "agent_address": "andi.xie241@gmail.com",
+  "allowed_senders": ["andi.xie24@gmail.com"],
+  "state": "../artifacts/email/live",
+  "token": "../artifacts/oauth/token.json",
+  "deepseek_key_file": "../artifacts/deploy/deepseek.key",
+  "model": "deepseek-flash",
+  "send": true,
+  "poll_seconds": 60,
+  "job_interval": 5,
+  "restart_limit": 5,
+  "restart_delay": 5
+}

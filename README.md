@@ -3,6 +3,7 @@
 The local command collects matter metadata and downloads up to ten files from the Nova Scotia public documents website using browser automation.
 It produces a JSON report, downloaded files, and a verified ZIP with a manifest.
 The email worker supports a dedicated Gmail inbox and validated DeepSeek request extraction. Live activation requires local OAuth and API configuration.
+The [deployment package](docs/deployment.md) adds supervision, logs, health checks, and persistent state for Windows or a Linux container.
 
 ## Setup
 
@@ -104,6 +105,7 @@ The tested Recording samples were 411 MB and 472 MB WAV files. The latter produc
 
 For email processing, OAuth setup, local previews, and the chosen mailbox addresses, see the [email setup guide](docs/email-setup.md) and [email validation](docs/email-validation.md).
 Install `requirements-email.txt` to run the email worker and its complete test suite.
+Install `requirements-dev.txt` for the optional Compose schema checker. See the [deployment validation](docs/deployment-validation.md) for current evidence and remaining target checks.
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
