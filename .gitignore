@@ -4,6 +4,8 @@
 !.env.example
 credentials*.json
 token*.json
+credentials*.json.tmp
+token*.json.tmp
 
 # Python environments and caches
 .venv/

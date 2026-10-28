@@ -49,11 +49,20 @@ It verifies archive entry counts, source and archive file hashes, and archive si
 The retrieval CLI packages automatically, and a separate command packages saved reports without contacting the website.
 See the [packaging checks](docs/packaging-validation.md) for test evidence and the observed Recording archive size.
 
+## Implemented email workflow
+
+Andi selected andi.xie241@gmail.com as the agent inbox and sender, and andi.xie24@gmail.com as the requester and ZIP recipient.
+The Gmail adapter uses OAuth, and DeepSeek performs request extraction with local validation of its JSON output.
+A durable local queue, one worker per state directory, explicit handling of uncertain sends, and persistent pauses after observed site blocks are implemented.
+Local previews attach the saved ten document ZIP and report the large Recording ZIP as oversized without claiming delivery.
+The application checks a configurable encoded message size limit before sending. No hosted file delivery is configured.
+
 ## Next milestone
 
-Connect email and validated request extraction in stage 4, starting with the chosen email provider and a concrete delivery size policy.
-The observed Recording ZIP is about 392 MB, so attachment handling must account for files that exceed the provider's limit.
-Before unattended use, add a shared request queue and explicit handling of site access blocks and rate limits.
+Complete stage 4's live acceptance: configure the Gmail OAuth client and DeepSeek key locally, then verify a real request from andi.xie24@gmail.com through to delivery from andi.xie241@gmail.com.
+The implementation has not yet been authenticated against those live services or used to send an email.
+See the [setup guide](docs/email-setup.md) and [validation evidence](docs/email-validation.md).
+After live acceptance, complete the broader workflow demonstration and deployment instructions in stages 5 and 6.
 
 ## References
 

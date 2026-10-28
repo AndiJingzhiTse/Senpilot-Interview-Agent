@@ -1,7 +1,8 @@
 # Senpilot regulatory document retrieval
 
 The local command collects matter metadata and downloads up to ten files from the Nova Scotia public documents website using browser automation.
-It produces a JSON report, downloaded files, and a verified ZIP with a manifest. Email integration is the next stage.
+It produces a JSON report, downloaded files, and a verified ZIP with a manifest.
+The email worker supports a dedicated Gmail inbox and validated DeepSeek request extraction. Live activation requires local OAuth and API configuration.
 
 ## Setup
 
@@ -100,6 +101,9 @@ Audio is not fully decoded or played during validation.
 The tested Recording samples were 411 MB and 472 MB WAV files. The latter produced a 392 MB ZIP, so email handling still needs a delivery size policy.
 
 ## Checks and diagnostics
+
+For email processing, OAuth setup, local previews, and the chosen mailbox addresses, see the [email setup guide](docs/email-setup.md) and [email validation](docs/email-validation.md).
+Install `requirements-email.txt` to run the email worker and its complete test suite.
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
