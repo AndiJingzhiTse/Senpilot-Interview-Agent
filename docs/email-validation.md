@@ -41,7 +41,7 @@ The full suite ran 64 tests: 63 passed and one filesystem symlink test was skipp
 ## Live acceptance and next checks
 
 Gmail OAuth is configured and live send records exist for the selected accounts. Andi reported successful receipt, and the saved MIME and archive checks passed.
-The Windows task subsequently passed a controlled restart and processed a fresh M12205 request through to Gmail acceptance, with ten verified documents attached. See the deployment validation for the source counts and attachment sizes. Confirmation of this specific reply in the recipient inbox remains pending.
+The Windows task subsequently passed a controlled restart and processed a fresh M12205 request through to Gmail acceptance, with ten verified documents attached. Andi confirmed receipt and successfully opened its ZIP. See the deployment validation for the source counts and attachment sizes.
 
 The Recording exception currently sends a truthful size notice rather than fulfilling the assignment's ZIP attachment requirement for an oversized result.
 Hosting or another delivery policy would be a separate decision. Provider quotas and target deployment behavior remain unverified.

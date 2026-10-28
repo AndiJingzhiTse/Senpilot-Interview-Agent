@@ -73,4 +73,4 @@ The saved MIME message and decoded attachment matched their recorded hashes. The
 The source now listed 44 Other Documents rather than the earlier 43, and the catalog included a new document in the selected ten. The new run used these actual source counts.
 The service remained healthy after the send. Detailed evidence is in ignored `artifacts/deployment/background-email-test.json`.
 
-This verifies processing and Gmail acceptance under the background task. Receipt and opening of this particular reply have not been independently confirmed in the recipient inbox.
+Andi subsequently confirmed that this reply arrived and that the ZIP opened successfully. This completes the reported recipient check for the background request; the inbox was not independently fetched by the agent.

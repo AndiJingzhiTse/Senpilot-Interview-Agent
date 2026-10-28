@@ -64,7 +64,8 @@ The portable service package now includes persistent state, OS locks, bounded pr
 Andi selected Windows background activation. Task SenpilotAgent is now registered and running against the original queue and token. Local startup, Gmail polling, and a controlled restart passed without repeating any of the three prior sends.
 See the [deployment guide](docs/deployment.md) and [validation record](docs/deployment-validation.md).
 
-The background task processed a fresh M12205 request using DeepSeek, downloaded ten documents without failures, and sent a verified ZIP through Gmail. Confirm receipt of that new reply, then finish the assignment demonstration and final reproducibility notes.
+The background task processed a fresh M12205 request using DeepSeek, downloaded ten documents without failures, and sent a verified ZIP through Gmail. Andi confirmed receipt and successfully opened the ZIP.
+Next, prepare the final requirements review and demonstration. Clearly disclose the oversized Recording exception, which currently does not satisfy the ZIP attachment requirement for those results, and document how an evaluator can be added to the sender list.
 An actual user logon or host reboot has not been tested. Native Python runtime migration is a followup because the Google client reports the current Python 3.10.11 environment as unsupported.
 The alternative Linux image still requires a real Docker build and runtime test on a selected host.
 
