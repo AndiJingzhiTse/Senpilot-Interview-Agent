@@ -9,6 +9,12 @@ The Linux container remains an alternative package and has not been built or lau
 
 ## Local configuration and key storage
 
+Select the interpreter from the repository root in PowerShell:
+
+```powershell
+$senpilotPython = if (Test-Path 'artifacts/runtime/venv/Scripts/python.exe') { '.\artifacts\runtime\venv\Scripts\python.exe' } else { '.\.venv\Scripts\python.exe' }
+```
+
 An ignored `deploy/agent.json` was prepared here from `deploy/agent.example.json`. On another checkout, copy the example first.
 Paths in this JSON are resolved relative to the configuration file. The example reuses the current live queue and OAuth token:
 
@@ -22,7 +28,7 @@ For a new activation or migration, stop any existing terminal worker with Ctrl+C
 In a terminal where `DEEPSEEK_API_KEY` is already set, save that key without displaying it:
 
 ```powershell
-.\.venv\Scripts\python.exe -m senpilot.service --config deploy/agent.json --store-key
+& $senpilotPython -m senpilot.service --config deploy/agent.json --store-key
 ```
 
 If the environment variable is absent, the command prompts privately for the key. It refuses to overwrite an existing key file.
@@ -31,7 +37,7 @@ The key stays outside Git and is never passed as a command argument. A backgroun
 Run the local preflight:
 
 ```powershell
-.\.venv\Scripts\python.exe -m senpilot.service --config deploy/agent.json --check
+& $senpilotPython -m senpilot.service --config deploy/agent.json --check
 ```
 
 It checks the key source, token structure and scopes, exclusive state locks, and a blank Chrome launch.
@@ -40,7 +46,7 @@ An old running worker's legacy lock is rejected, including an empty lock whose c
 
 ## Windows background task
 
-The supplied task uses the existing virtual environment and installed Chrome. It starts at the current Windows user's logon and can restart after a process failure.
+The supplied task uses the selected virtual environment and installed Chrome. It starts at the current Windows user's logon and can restart after a process failure.
 It runs through `pythonw.exe`, so an open terminal is unnecessary. The computer must remain awake and connected, and this setup does not start before user logon.
 
 First inspect the registration without changing Task Scheduler:
@@ -56,6 +62,7 @@ To register it and start it immediately:
 ```
 
 Registration runs the preflight first and refuses to replace an existing task with the same name.
+For a reviewed runtime change, `-Update -PythonPath PATH_TO_PYTHON` changes only the action of the matching project task after it has been stopped. The [runtime migration guide](runtime-upgrade.md) records the completed handover.
 If Windows denies registration, use an account or shell permitted to create that user's scheduled tasks.
 
 ```powershell
@@ -71,7 +78,7 @@ Unregister-ScheduledTask -TaskName SenpilotAgent -Confirm:$false
 ```
 
 These commands do not remove queue history or downloaded files. Microsoft documents the task's [restart and execution settings](https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/new-scheduledtasksettingsset).
-The existing Windows environment is Python 3.10.11; it was used for local compatibility tests. The new server image targets Python 3.12, which is still maintained according to Python's [version status](https://devguide.python.org/versions/).
+The active Windows environment is Python 3.12.16. The older Python 3.10.11 environment remains as a rollback option. The server image also targets Python 3.12, which is maintained according to Python's [version status](https://devguide.python.org/versions/).
 
 ## Linux container
 
@@ -127,7 +134,7 @@ Recordings need substantial disk capacity: ten files comparable to the observed 
 ## Health and logs
 
 ```powershell
-.\.venv\Scripts\python.exe -m senpilot.service --config deploy/agent.json --health
+& $senpilotPython -m senpilot.service --config deploy/agent.json --health
 Get-Content artifacts/email/live/service/worker.log -Tail 30
 ```
 
@@ -156,5 +163,5 @@ The existing oversized archive policy still applies. Deployment does not add hos
 Windows registration, background startup, Gmail polling, and a controlled stop and start have been verified. The existing three sent replies retained their original message IDs and attempt counts after restart.
 The logon trigger and failure restart settings are configured, but an actual Windows logoff or reboot was not performed.
 A fresh M12205 Other Documents request was processed by the task using DeepSeek, and Gmail accepted its reply with ten documents in a verified ZIP. Andi confirmed that the reply arrived and the ZIP opened successfully.
-The installed Google client also reports Python 3.10.11 as unsupported; a maintained native Python environment is a followup migration. The current task started and polled successfully with the existing environment.
+The native task has been migrated to Python 3.12.16 after regression and provider checks. Its current heartbeat records that interpreter, and the new startup no longer emits the prior unsupported Python warning.
 The [validation record](deployment-validation.md) distinguishes the local checks from target checks still pending.

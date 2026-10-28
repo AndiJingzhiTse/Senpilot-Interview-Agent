@@ -46,7 +46,7 @@ For offline repetition, pass `--schema artifacts/deployment/compose-schema.json`
 
 ## Limits and pending checks
 
-The local environment is Windows with Python 3.10.11 and installed Chrome. The new image targets Linux amd64 and Python 3.12.
+Initial packaging checks used Windows with Python 3.10.11 and installed Chrome. The active native environment has since been migrated to Python 3.12.16. The image targets Linux amd64 and Python 3.12.
 Docker is absent here, so the image has not been built or executed. The POSIX lock branch, Linux dependency installation, and mounted file permissions still need validation on that target.
 The scheduled task has since been registered and started. Background startup, a controlled task restart, and a fresh request through to a confirmed Gmail send passed. An actual logoff or reboot and a forced crash of the installed task were not performed.
 Application recovery tests do not establish availability during host failure, expired provider grants, disk exhaustion, or an operator's intentional shutdown.
@@ -61,7 +61,7 @@ The actual local preflight passed with Chrome 155.0.8059.85. Service health repo
 A controlled Stop-ScheduledTask operation stopped both Python processes. The next local preflight could acquire the state locks, and Start-ScheduledTask started a new healthy process.
 All three original Gmail message IDs and processing attempt counts remained unchanged. Details are saved in ignored `artifacts/deployment/windows-activation.json`.
 
-The background Google client emitted a Python 3.10.11 support warning. It did not prevent startup or polling, but native runtime migration remains a followup.
+The original background environment emitted a Python 3.10.11 support warning. The subsequent migration to Python 3.12.16 removed that warning from the new startup.
 
 ## Fresh background request
 
@@ -74,3 +74,15 @@ The source now listed 44 Other Documents rather than the earlier 43, and the cat
 The service remained healthy after the send. Detailed evidence is in ignored `artifacts/deployment/background-email-test.json`.
 
 Andi subsequently confirmed that this reply arrived and that the ZIP opened successfully. This completes the reported recipient check for the background request; the inbox was not independently fetched by the agent.
+
+## Runtime migration and final review
+
+Python 3.12.16 was installed beside the existing environment, with the same pinned application dependencies.
+The latest suite ran 79 tests: 78 passed and the existing Windows symlink test was skipped. Dependency and Compose schema checks passed.
+Live Gmail profile access and a real DeepSeek request extraction were verified under the new interpreter before handover. No synthetic email request was sent for that provider check.
+
+The task action was changed only after the queue was idle. All five existing sends retained their Gmail IDs and processing attempt counts.
+The new heartbeat records Python 3.12.16 and `artifacts/runtime/venv/Scripts/pythonw.exe`, and Gmail polling resumed successfully.
+The original task XML and Python 3.10 environment remain available for rollback. See [runtime migration](runtime-upgrade.md).
+
+Andi chose to keep the current oversized ZIP notice and explicitly disclose the resulting attachment limitation. The [requirements review](requirements-review.md) and [demo guide](demo.md) form the handoff record.

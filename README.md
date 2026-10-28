@@ -1,27 +1,50 @@
-# Senpilot regulatory document retrieval
+# Senpilot document agent
 
 The local command collects matter metadata and downloads up to ten files from the Nova Scotia public documents website using browser automation.
 It produces a JSON report, downloaded files, and a verified ZIP with a manifest.
 The email worker supports a dedicated Gmail inbox and validated DeepSeek request extraction. Live activation requires local OAuth and API configuration.
 The [deployment package](docs/deployment.md) adds supervision, logs, health checks, and persistent state for Windows or a Linux container.
 
+The Windows task is active, and Andi Tse confirmed a complete email request and ZIP receipt. See the [requirements review](docs/requirements-review.md) and [demo and evaluator handoff](docs/demo.md).
+**Known limitation:** a ZIP that exceeds the configured email size limit receives a notice without its files. This is disclosed partial coverage of the assignment's attachment requirement; no download link fallback is implemented.
+
+```mermaid
+flowchart LR
+    Inbox[Gmail request] --> Queue[Durable queue]
+    Queue --> Extract[DeepSeek and local validation]
+    Extract --> Browser[Playwright retrieval]
+    Browser --> Archive[Verified ZIP]
+    Archive --> Size[Email size policy]
+    Size --> Reply[Gmail reply]
+```
+
 ## Setup
 
-Tested on Windows with Python 3.10.11 and an installed Google Chrome browser.
-Run these commands from the repository root in PowerShell:
+The current Windows task uses Python 3.12.16 and installed Google Chrome. The old Python 3.10 environment is retained only for rollback.
+For a fresh checkout with Python 3.12 already installed, run from the repository root in PowerShell:
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+py -3.12 -m venv .venv
+$senpilotPython = '.\.venv\Scripts\python.exe'
+& $senpilotPython -m pip install -r requirements-email.txt
 ```
+
+For this existing configured checkout, select its active environment instead:
+
+```powershell
+$senpilotPython = '.\artifacts\runtime\venv\Scripts\python.exe'
+```
+
+The [runtime migration guide](docs/runtime-upgrade.md) documents the project scoped managed Python installation when Python 3.12 is not already installed.
+Configure Gmail OAuth and the DeepSeek key using the [email setup guide](docs/email-setup.md). Downloaded files, tokens, keys, and queue data are not included in Git.
 
 ## Retrieve files
 
 ```powershell
-.\.venv\Scripts\python.exe -m senpilot M12205 'Other Documents'
-.\.venv\Scripts\python.exe -m senpilot M12205 'Key Documents' --limit 3
-.\.venv\Scripts\python.exe -m senpilot M10431 Transcripts --limit 1
-.\.venv\Scripts\python.exe -m senpilot M10431 Recordings --limit 1
+& $senpilotPython -m senpilot M12205 'Other Documents'
+& $senpilotPython -m senpilot M12205 'Key Documents' --limit 3
+& $senpilotPython -m senpilot M10431 Transcripts --limit 1
+& $senpilotPython -m senpilot M10431 Recordings --limit 1
 ```
 
 The category must be Exhibits, Key Documents, Other Documents, Transcripts, or Recordings.
@@ -47,7 +70,7 @@ Unexpected programming errors still raise a traceback and leave an error report.
 Packaging runs automatically after the retrieval command. To package an older saved report without opening a browser or downloading again:
 
 ```powershell
-.\.venv\Scripts\python.exe -m senpilot.package artifacts/retrieval/release-ten-other-documents/report.json
+& $senpilotPython -m senpilot.package artifacts/retrieval/release-ten-other-documents/report.json
 ```
 
 The default destination is a new `package/` directory beside that report.
@@ -99,7 +122,7 @@ PDF text that lacks the matter number is recorded without rejecting an otherwise
 WAV source header inconsistencies are reported as warnings after the browser confirms transfer completion; file bytes are preserved and an unreliable duration is omitted.
 Audio is not fully decoded or played during validation.
 
-The tested Recording samples were 411 MB and 472 MB WAV files. The latter produced a 392 MB ZIP, so email handling still needs a delivery size policy.
+The tested Recording samples were 411 MB and 472 MB WAV files. The latter produced a 392 MB ZIP. Andi chose to retain the size notice and disclose that oversized results do not deliver their files.
 
 ## Checks and diagnostics
 
@@ -108,9 +131,9 @@ Install `requirements-email.txt` to run the email worker and its complete test s
 Install `requirements-dev.txt` for the optional Compose schema checker. See the [deployment validation](docs/deployment-validation.md) for current evidence and remaining target checks.
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\.venv\Scripts\python.exe scripts/probe_download_transport.py
-.\.venv\Scripts\python.exe scripts/probe_download_transport.py --compare-http
+& $senpilotPython -m unittest discover -s tests -v
+& $senpilotPython scripts/probe_download_transport.py
+& $senpilotPython scripts/probe_download_transport.py --compare-http
 ```
 
 Tests include real Chrome downloads from a local test server, including a connection that stalls after 32 KB.

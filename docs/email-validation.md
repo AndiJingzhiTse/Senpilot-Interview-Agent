@@ -36,12 +36,12 @@ Run with the email dependencies installed:
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-The full suite ran 64 tests: 63 passed and one filesystem symlink test was skipped because this Windows session does not permit creating symbolic links.
+At the original email milestone, the suite ran 64 tests: 63 passed and one filesystem symlink test was skipped because this Windows session does not permit creating symbolic links. Later deployment and runtime evidence is recorded separately.
 
 ## Live acceptance and next checks
 
 Gmail OAuth is configured and live send records exist for the selected accounts. Andi reported successful receipt, and the saved MIME and archive checks passed.
 The Windows task subsequently passed a controlled restart and processed a fresh M12205 request through to Gmail acceptance, with ten verified documents attached. Andi confirmed receipt and successfully opened its ZIP. See the deployment validation for the source counts and attachment sizes.
 
-The Recording exception currently sends a truthful size notice rather than fulfilling the assignment's ZIP attachment requirement for an oversized result.
-Hosting or another delivery policy would be a separate decision. Provider quotas and target deployment behavior remain unverified.
+The Recording exception sends a truthful size notice rather than fulfilling the assignment's ZIP attachment requirement for an oversized result. Andi explicitly chose to retain this behavior and disclose it in the submission.
+Provider quotas, a complete host reboot, and the alternative Linux runtime remain unverified.

@@ -65,8 +65,9 @@ Andi selected Windows background activation. Task SenpilotAgent is now registere
 See the [deployment guide](docs/deployment.md) and [validation record](docs/deployment-validation.md).
 
 The background task processed a fresh M12205 request using DeepSeek, downloaded ten documents without failures, and sent a verified ZIP through Gmail. Andi confirmed receipt and successfully opened the ZIP.
-Next, prepare the final requirements review and demonstration. Clearly disclose the oversized Recording exception, which currently does not satisfy the ZIP attachment requirement for those results, and document how an evaluator can be added to the sender list.
-An actual user logon or host reboot has not been tested. Native Python runtime migration is a followup because the Google client reports the current Python 3.10.11 environment as unsupported.
+The [requirements review](docs/requirements-review.md) and [demo and handoff guide](docs/demo.md) are prepared. Andi chose to retain the oversized ZIP notice and disclose that those results do not fulfill the ZIP attachment requirement. Evaluator access instructions explain the sender list.
+The active Windows task now uses Python 3.12.16 after regression and provider checks; the previous environment is retained for rollback. See [runtime migration](docs/runtime-upgrade.md).
+An actual user logon or host reboot has not been tested.
 The alternative Linux image still requires a real Docker build and runtime test on a selected host.
 
 ## References

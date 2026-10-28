@@ -14,7 +14,8 @@ The implementation and local previews are ready. Live Gmail authorization, a Dee
 From the repository root in PowerShell:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements-email.txt
+$senpilotPython = if (Test-Path 'artifacts/runtime/venv/Scripts/python.exe') { '.\artifacts\runtime\venv\Scripts\python.exe' } else { '.\.venv\Scripts\python.exe' }
+& $senpilotPython -m pip install -r requirements-email.txt
 ```
 
 The email dependencies are optional for browser retrieval. DeepSeek requests use Python's standard HTTP library.
@@ -24,7 +25,7 @@ The email dependencies are optional for browser retrieval. DeepSeek requests use
 This command uses the saved M12205 request, writes a local `.eml` reply, and does not connect to Gmail, DeepSeek, or the documents website:
 
 ```powershell
-.\.venv\Scripts\python.exe -m senpilot.email --eml examples/request.eml --agent andi.xie241@gmail.com --allow-sender andi.xie24@gmail.com --extractor exact --saved-report artifacts/retrieval/release-ten-other-documents/report.json --state artifacts/email/pdf-preview
+& $senpilotPython -m senpilot.email --eml examples/request.eml --agent andi.xie241@gmail.com --allow-sender andi.xie24@gmail.com --extractor exact --saved-report artifacts/retrieval/release-ten-other-documents/report.json --state artifacts/email/pdf-preview
 ```
 
 The prepared reply is under that state directory's `jobs/` folder. Repeating the command reuses the queued result rather than downloading or preparing it again.
@@ -43,7 +44,7 @@ Follow Google's [Python quickstart](https://developers.google.com/workspace/gmai
 4. Run the command below and choose **andi.xie241@gmail.com** in the consent browser.
 
 ```powershell
-.\.venv\Scripts\python.exe -m senpilot.gmail --agent andi.xie241@gmail.com
+& $senpilotPython -m senpilot.gmail --agent andi.xie241@gmail.com
 ```
 
 The authorization requests Gmail read and send scopes. It does not request mailbox modification or Drive access.
@@ -78,19 +79,19 @@ From **andi.xie24@gmail.com**, send a request to **andi.xie241@gmail.com** such 
 Leave it unread in the agent inbox until the worker polls it. Run one poll to prepare a local reply:
 
 ```powershell
-.\.venv\Scripts\python.exe -m senpilot.email --gmail --agent andi.xie241@gmail.com --allow-sender andi.xie24@gmail.com --state artifacts/email/live
+& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --allow-sender andi.xie24@gmail.com --state artifacts/email/live
 ```
 
 This performs real request extraction and browser retrieval, but saves the reply locally. After inspecting it, add `--send` to send prepared replies through Gmail:
 
 ```powershell
-.\.venv\Scripts\python.exe -m senpilot.email --gmail --agent andi.xie241@gmail.com --allow-sender andi.xie24@gmail.com --state artifacts/email/live --send
+& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --allow-sender andi.xie24@gmail.com --state artifacts/email/live --send
 ```
 
 For automatic ongoing handling, add `--watch`. It polls every 60 seconds by default and stops with Ctrl+C:
 
 ```powershell
-.\.venv\Scripts\python.exe -m senpilot.email --gmail --agent andi.xie241@gmail.com --allow-sender andi.xie24@gmail.com --state artifacts/email/live --send --watch
+& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --allow-sender andi.xie24@gmail.com --state artifacts/email/live --send --watch
 ```
 
 Gmail sends use MIME messages and base64url encoding as documented in Google's [sending guide](https://developers.google.com/workspace/gmail/api/guides/sending).
@@ -113,7 +114,7 @@ Each accepted request receives its own job directory. Replies target the origina
 The sender list bounds this local demonstration's intake; it is not identity authentication for a public service.
 
 ```powershell
-.\.venv\Scripts\python.exe -m senpilot.email --status --state artifacts/email/live
+& $senpilotPython -m senpilot.email --status --state artifacts/email/live
 ```
 
 | State | Meaning |
