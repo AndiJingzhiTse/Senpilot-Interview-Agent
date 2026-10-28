@@ -48,7 +48,7 @@ For offline repetition, pass `--schema artifacts/deployment/compose-schema.json`
 
 The local environment is Windows with Python 3.10.11 and installed Chrome. The new image targets Linux amd64 and Python 3.12.
 Docker is absent here, so the image has not been built or executed. The POSIX lock branch, Linux dependency installation, and mounted file permissions still need validation on that target.
-The scheduled task has since been registered and started. Background startup and a controlled task restart passed; a fresh request test is pending below. An actual logoff or reboot and a forced crash of the installed task were not performed.
+The scheduled task has since been registered and started. Background startup, a controlled task restart, and a fresh request through to a confirmed Gmail send passed. An actual logoff or reboot and a forced crash of the installed task were not performed.
 Application recovery tests do not establish availability during host failure, expired provider grants, disk exhaustion, or an operator's intentional shutdown.
 No remote host has been purchased or provisioned. The local task now replaces the former terminal worker.
 
@@ -62,4 +62,15 @@ A controlled Stop-ScheduledTask operation stopped both Python processes. The nex
 All three original Gmail message IDs and processing attempt counts remained unchanged. Details are saved in ignored `artifacts/deployment/windows-activation.json`.
 
 The background Google client emitted a Python 3.10.11 support warning. It did not prevent startup or polling, but native runtime migration remains a followup.
-The final new request and recipient receipt test under this task is pending.
+
+## Fresh background request
+
+Andi sent a new request for M12205 Other Documents to the agent inbox. The Windows task processed it without a terminal worker, using the recorded `deepseek` extractor and `deepseek-flash` model.
+The job completed on its first processing attempt with ten documents and zero download failures, and Gmail returned a sent message ID.
+
+The attached ZIP contained 6686350 bytes; the encoded email contained 9151294 bytes. Its From and To addresses matched the configured agent and requester.
+The saved MIME message and decoded attachment matched their recorded hashes. The archive contained ten documents plus its manifest, and every archived document matched the size and SHA256 of its saved source file.
+The source now listed 44 Other Documents rather than the earlier 43, and the catalog included a new document in the selected ten. The new run used these actual source counts.
+The service remained healthy after the send. Detailed evidence is in ignored `artifacts/deployment/background-email-test.json`.
+
+This verifies processing and Gmail acceptance under the background task. Receipt and opening of this particular reply have not been independently confirmed in the recipient inbox.

@@ -155,6 +155,6 @@ The existing oversized archive policy still applies. Deployment does not add hos
 
 Windows registration, background startup, Gmail polling, and a controlled stop and start have been verified. The existing three sent replies retained their original message IDs and attempt counts after restart.
 The logon trigger and failure restart settings are configured, but an actual Windows logoff or reboot was not performed.
-The final new email check under the background task is recorded in the validation record when completed.
+A fresh M12205 Other Documents request was processed by the task using DeepSeek, and Gmail accepted its reply with ten documents in a verified ZIP. Recipient confirmation of this specific new reply remains separate from the sender's delivery record.
 The installed Google client also reports Python 3.10.11 as unsupported; a maintained native Python environment is a followup migration. The current task started and polled successfully with the existing environment.
 The [validation record](deployment-validation.md) distinguishes the local checks from target checks still pending.
