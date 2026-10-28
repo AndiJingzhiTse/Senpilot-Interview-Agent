@@ -35,7 +35,7 @@ Run the local preflight:
 
 It checks the key source, token structure and scopes, exclusive state locks, and a blank Chrome launch.
 It does not validate the key against DeepSeek, refresh Gmail access, retrieve documents, or send mail.
-An old running worker's legacy lock is rejected. Stop that worker normally; do not delete its lock while it runs.
+An old running worker's legacy lock is rejected, including an empty lock whose contents have not been flushed yet. Stop that worker normally; do not delete its lock while it runs.
 
 ## Windows background task
 

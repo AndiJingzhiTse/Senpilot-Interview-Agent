@@ -218,12 +218,13 @@ with worker_lock(root):
         with TemporaryDirectory() as directory:
             root = Path(directory)
             path = root / "worker.lock"
-            path.write_text("One worker may retrieve and send at a time.\n")
-            original = path.read_bytes()
-            with self.assertRaisesRegex(WorkerLockError, "legacy"):
-                with worker_lock(root):
-                    self.fail("Adopted the old worker's lock")
-            self.assertEqual(path.read_bytes(), original)
+            for original in (b"One worker may retrieve and send at a time.\n", b""):
+                with self.subTest(contents=original):
+                    path.write_bytes(original)
+                    with self.assertRaisesRegex(WorkerLockError, "legacy"):
+                        with worker_lock(root):
+                            self.fail("Adopted the old worker's lock")
+                    self.assertEqual(path.read_bytes(), original)
 
     def test_recovery_requeues_only_processing_and_never_repeats_sends(self):
         with TemporaryDirectory() as directory:

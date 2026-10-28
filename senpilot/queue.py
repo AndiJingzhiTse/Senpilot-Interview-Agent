@@ -17,12 +17,18 @@ def worker_lock(root: Path, filename="worker.lock"):
     """Use an OS lock that is released even after a hard process termination."""
     root.mkdir(parents=True, exist_ok=True)
     path = root / filename
-    stream = os.fdopen(os.open(path, os.O_RDWR | os.O_CREAT, 0o600), "r+b", buffering=0)
+    try:
+        descriptor = os.open(path, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0o600)
+        created = True
+    except FileExistsError:
+        descriptor = os.open(path, os.O_RDWR)
+        created = False
+    stream = os.fdopen(descriptor, "r+b", buffering=0)
     locked = False
     try:
         try:
             prefix = stream.read(100)
-            if prefix.startswith(b"One worker may retrieve"):
+            if not created and not prefix.startswith(b'{"format": "senpilot.lock.v2"'):
                 raise WorkerLockError("A legacy worker lock exists; stop the old worker before starting this version")
             if os.name == "nt":
                 import msvcrt
