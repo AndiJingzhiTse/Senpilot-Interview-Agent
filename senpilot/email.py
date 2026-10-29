@@ -49,6 +49,7 @@ def main(argv=None):
     parser.add_argument("--send", action="store_true", help="Send prepared replies; requires --gmail")
     parser.add_argument("--watch", action="store_true", help="Continue polling until stopped; requires --gmail")
     parser.add_argument("--poll-seconds", type=float, default=60, help="Seconds between inbox polls, minimum 30")
+    parser.add_argument("--received-after", type=int, help="Earliest Gmail receipt time in Unix seconds; unrestricted intake otherwise starts now and persists its boundary")
     parser.add_argument("--resume-site", action="store_true", help="Clear a local pause after resolving a website access block")
     parser.add_argument("--recover-processing", action="store_true", help="Recover interrupted processing, never uncertain sends; requires --gmail")
     args = parser.parse_args(argv)
@@ -62,6 +63,8 @@ def main(argv=None):
         parser.error("--status does not change the site pause; use --resume-site with a processing mode")
     if args.saved_report and not args.eml:
         parser.error("--saved-report requires --eml")
+    if args.received_after is not None and (not args.gmail or not 0 < args.received_after <= time.time()):
+        parser.error("--received-after requires --gmail and a positive timestamp no later than now")
     if not args.status and ((not args.allow_sender and not args.accept_any_sender) or (not args.gmail and not args.agent)):
         parser.error("Processing requires --allow-sender or --accept-any-sender; local mode also requires --agent")
     if (not math.isfinite(args.interval) or args.interval < 5 or not math.isfinite(args.poll_seconds)
@@ -98,19 +101,25 @@ def main(argv=None):
                     queue.enqueue("eml:" + sha256(raw).hexdigest(), raw)
                 else:
                     queue.retry(args.retry_job)
+            received_after = queue.intake_after(args.received_after) if args.gmail and (args.accept_any_sender or args.received_after is not None) else None
+            next_poll = 0
             while True:
-                if provider is not None:
+                if provider is not None and time.monotonic() >= next_poll:
                     known = {row["source_id"] for row in queue.rows()}
-                    for source_id, raw, thread_id in provider.incoming(known, allowed_senders=allowed):
+                    for source_id, raw, thread_id in provider.incoming(known, allowed_senders=allowed, received_after=received_after):
                         queue.enqueue(source_id, raw, thread_id)
+                    next_poll = time.monotonic() + args.poll_seconds
+                if args.send:
+                    send_prepared(queue, provider, agent, allowed)
                 prepare_pending(queue, agent, allowed, extractor=args.extractor, saved_report=args.saved_report,
-                                max_message_bytes=args.max_message_bytes, interval=args.interval)
+                                max_message_bytes=args.max_message_bytes, interval=args.interval,
+                                maximum_jobs=1 if args.watch else None)
                 if args.send:
                     send_prepared(queue, provider, agent, allowed)
                 result = show_status(queue)
                 if not args.watch or queue.site_paused():
                     return result
-                time.sleep(args.poll_seconds)
+                time.sleep(args.interval if queue.rows("pending") else max(0, next_poll - time.monotonic()))
     except KeyboardInterrupt:
         print("Email worker stopped; queue state was preserved.", file=sys.stderr)
         return 130

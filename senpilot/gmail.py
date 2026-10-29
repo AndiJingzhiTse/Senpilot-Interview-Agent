@@ -46,12 +46,15 @@ class Gmail:
         self.service = service
         self.address = service.users().getProfile(userId="me").execute(num_retries=2)["emailAddress"]
 
-    def incoming(self, known: set[str], maximum=20, allowed_senders: set[str] | None = None):
+    def incoming(self, known: set[str], maximum=20, allowed_senders: set[str] | None = None,
+                 received_after: int | None = None):
         # None explicitly allows any sender; an empty set accepts nobody.
         if allowed_senders is not None and not allowed_senders:
             return
         token, remaining = None, maximum
         query = "is:unread in:inbox -from:me"
+        if received_after is not None:
+            query += f" after:{received_after}"
         if allowed_senders:
             query += " {" + " ".join(f"from:{address}" for address in sorted(allowed_senders)) + "}"
         while remaining:
@@ -62,6 +65,8 @@ class Gmail:
                 if source_id in known:
                     continue
                 metadata = self.service.users().messages().get(userId="me", id=item["id"], format="metadata").execute(num_retries=2)
+                if received_after is not None and int(metadata.get("internalDate", 0)) <= received_after * 1000:
+                    continue
                 if metadata.get("sizeEstimate", 0) > 1024 * 1024:
                     raw = b"Auto-Submitted: auto-generated\r\n\r\nIgnored incoming request above 1 MB."
                 else:

@@ -126,6 +126,15 @@ class MessageTests(unittest.TestCase):
         with self.assertRaises(MessageError):
             read_message(raw, AGENT)
 
+    def test_automated_addresses_and_subscription_mail_are_ignored(self):
+        for sender in ("no-reply@example.com", "noreply@example.com", "mailer-daemon@example.com", "do_not_reply@example.com"):
+            with self.subTest(sender=sender), self.assertRaises(MessageError):
+                read_message(message(sender=sender).as_bytes(), AGENT)
+        incoming = message()
+        incoming["List-Unsubscribe"] = "<mailto:unsubscribe@example.com>"
+        with self.assertRaises(MessageError):
+            read_message(incoming.as_bytes(), AGENT)
+
 
 class PipelineTests(unittest.TestCase):
     def setUp(self):
@@ -261,6 +270,33 @@ class PipelineTests(unittest.TestCase):
         job = self.enqueue()
         process_job(self.queue, job, AGENT, set(), extractor="exact", saved_report=self.report_path)
         self.assertEqual(self.queue.rows()[0]["state"], "ignored")
+
+    def test_unrelated_mail_in_any_sender_mode_never_calls_extraction_or_sends(self):
+        incoming = message("Welcome! Your account is ready.", sender="support@example.org")
+        incoming.replace_header("Subject", "Welcome")
+        job = self.enqueue(incoming.as_bytes())
+        with patch("senpilot.worker.extract_request") as extract:
+            process_job(self.queue, job, AGENT, None, saved_report=self.report_path)
+        extract.assert_not_called()
+        self.assertEqual(self.queue.rows()[0]["state"], "ignored")
+        self.assertNotIn("reply_path", self.queue.rows()[0]["info"])
+
+    def test_partial_document_request_from_new_sender_gets_clarification(self):
+        job = self.enqueue(message("Please send M12205.", sender="customer@example.org").as_bytes())
+        process_job(self.queue, job, AGENT, None, extractor="exact", saved_report=self.report_path)
+        self.assertEqual(self.queue.rows()[0]["info"]["attachment"], "clarification")
+
+    def test_first_intake_boundary_persists_across_restarts_and_can_be_set_explicitly(self):
+        with patch("senpilot.queue.time.time", return_value=2000):
+            self.assertEqual(self.queue.intake_after(), 1999)
+        other = JobQueue(self.queue.root)
+        try:
+            with patch("senpilot.queue.time.time", return_value=9000):
+                self.assertEqual(other.intake_after(), 1999)
+                self.assertEqual(other.intake_after(1000), 1000)
+                self.assertEqual(other.intake_after(), 1000)
+        finally:
+            other.close()
 
     def test_saved_report_must_match_the_request(self):
         job = self.enqueue(message("M12383 Exhibits").as_bytes())
@@ -426,6 +462,29 @@ class PipelineTests(unittest.TestCase):
                 email_main(["--gmail", *policy_args])
             self.assertEqual(error.exception.code, 2)
 
+    def test_watch_sends_each_reply_before_starting_the_next_job(self):
+        state = self.root / "fair-watch-queue"
+        provider = Mock(address=AGENT)
+        provider.incoming.return_value = [("first", message().as_bytes(), "thread-1"),
+                                          ("second", message(sender="new@example.org").as_bytes(), "thread-2")]
+        provider.send.return_value = {"id": "sent"}
+        send_counts = []
+        def retrieve(matter, category, output):
+            send_counts.append(provider.send.call_count)
+            shutil.copytree(self.source, output)
+            return self.report
+        args = ["--gmail", "--agent", AGENT, "--accept-any-sender", "--extractor", "exact",
+                "--state", str(state), "--send", "--watch"]
+        with patch("senpilot.gmail.Gmail", return_value=provider), \
+                patch("senpilot.retrieval.retrieve", side_effect=retrieve), \
+                patch("senpilot.email.time.sleep", side_effect=[None, KeyboardInterrupt]), \
+                redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            self.assertEqual(email_main(args), 130)
+        self.assertEqual(send_counts, [0, 1])
+        self.assertEqual(provider.send.call_count, 2)
+        self.assertEqual(provider.incoming.call_count, 1)
+        self.assertIsInstance(provider.incoming.call_args.kwargs["received_after"], int)
+
 
 class GmailTests(unittest.TestCase):
     def service(self):
@@ -469,6 +528,22 @@ class GmailTests(unittest.TestCase):
         messages.list.reset_mock()
         self.assertEqual(list(provider.incoming(set(), allowed_senders=set())), [])
         messages.list.assert_not_called()
+
+    def test_receipt_boundary_excludes_old_mail_using_internal_date(self):
+        service = self.service()
+        messages = service.users.return_value.messages.return_value
+        messages.list.return_value.execute.return_value = {"messages": [{"id": "old"}, {"id": "new"}]}
+        raw = message().as_bytes()
+        messages.get.return_value.execute.side_effect = [
+            {"internalDate": "999000"},
+            {"internalDate": "1001000", "sizeEstimate": len(raw), "threadId": "new-thread"},
+            {"raw": base64.urlsafe_b64encode(raw).decode()}]
+        provider = Gmail(Path("unused"), service=service)
+        result = list(provider.incoming(set(), received_after=1000))
+        self.assertEqual(result, [(f"gmail:{AGENT}:new", raw, "new-thread")])
+        self.assertIn("after:1000", messages.list.call_args.kwargs["q"])
+        raw_gets = [call for call in messages.get.call_args_list if call.kwargs.get("format") == "raw"]
+        self.assertEqual([call.kwargs["id"] for call in raw_gets], ["new"])
 
     def test_token_with_only_read_access_is_rejected_before_refresh(self):
         with TemporaryDirectory() as directory:

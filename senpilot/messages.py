@@ -55,11 +55,16 @@ def read_message(raw: bytes, agent_address: str) -> IncomingMessage:
         raise MessageError("Automatic messages and delivery reports are ignored")
     if message.get("Precedence", "").lower() in {"bulk", "list", "junk"} or message.get("List-Id"):
         raise MessageError("Mailing list and bulk messages are ignored")
+    if message.get("List-Unsubscribe"):
+        raise MessageError("Subscription messages are ignored")
     headers = message.get_all("From", [])
     addresses = headers[0].addresses if len(headers) == 1 and not headers[0].defects else []
     if len(addresses) != 1:
         raise MessageError("The request must have exactly one valid From address")
     sender = mailbox(addresses[0].addr_spec)
+    local_name = re.sub(r"[-_.]", "", sender.split("@", 1)[0]).casefold()
+    if local_name in {"noreply", "donotreply", "mailerdaemon", "postmaster"}:
+        raise MessageError("Automated sender addresses are ignored")
     if sender.casefold() == agent_address.casefold():
         raise MessageError("Messages from the agent itself are ignored")
     body = message.get_body(preferencelist=("plain", "html"))
@@ -82,6 +87,11 @@ def read_message(raw: bytes, agent_address: str) -> IncomingMessage:
     identifier = str(message.get("Message-ID", ""))
     identifier = identifier if re.fullmatch(r"<[^<>\s]{1,250}>", identifier) else None
     return IncomingMessage(sender, subject, subject + "\n" + text, identifier)
+
+
+def document_request_candidate(text: str) -> bool:
+    """Unrestricted intake ignores unrelated mail before calling extraction."""
+    return re.search(r"\b(?:M\d{5}|documents?|files?|exhibits?|transcripts?|recordings?|zip)\b", text, re.IGNORECASE) is not None
 
 
 def reply_message(incoming: IncomingMessage, agent_address: str, text: str) -> EmailMessage:

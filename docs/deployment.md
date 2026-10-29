@@ -27,6 +27,9 @@ Paths in this JSON are resolved relative to the configuration file. The example 
 The sender policy must be explicit. To restrict intake, set `accept_any_sender` to `false` and populate `allowed_senders`.
 To accept any sender, set `accept_any_sender` to `true` and leave `allowed_senders` empty. Restart the task after editing the configuration.
 Only unread Inbox messages are polled. Automatic replies, delivery reports, bulk mail, and messages from the agent itself are ignored.
+Unrestricted intake persists a receipt boundary at first launch and excludes earlier mail. An optional `received_after` Unix timestamp explicitly chooses an earlier boundary for a controlled catchup.
+The current installation uses the start of October 28, 2026, in Toronto to preserve that day's real test requests. Old unsent jobs from before this boundary were excluded during the repair described in [deployment validation](deployment-validation.md).
+Requests placed in Spam must be moved to the Inbox with Gmail's **Not spam** action. The worker has no mailbox modification permission and does not process Spam.
 
 For a new activation or migration, stop any existing terminal worker with Ctrl+C and wait for it to exit.
 In a terminal where `DEEPSEEK_API_KEY` is already set, save that key without displaying it:

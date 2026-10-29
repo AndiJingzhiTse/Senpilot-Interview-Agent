@@ -70,6 +70,10 @@ The active Windows task now uses Python 3.12.16 after regression and provider ch
 An actual user logon or host reboot has not been tested.
 The alternative Linux image still requires a real Docker build and runtime test on a selected host.
 
+The unrestricted intake change exposed old unread mail and sent 426 clarification replies to unrelated historical messages. The task was stopped, the queue backed up, and 19 unsent historical or unrelated jobs excluded without deleting their audit records.
+Intake now persists a receipt boundary, excludes subscription and obvious automated mail, ignores unrelated messages before extraction, and sends each watcher reply before starting the next job.
+Two missing requests from andi.xie242@gmail.com were found in Gmail Spam. Both contain valid M12205 Other Documents requests; Andi must select Not spam in the agent mailbox before the Inbox worker can receive them.
+
 ## References
 
 - [Course introduction](Slide/01_IntroCodingWithAI.pdf), especially page 12 on owning decisions.

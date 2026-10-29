@@ -8,7 +8,7 @@ from pathlib import Path
 import time
 
 from .delivery import DeliveryError, prepare_reply
-from .messages import MessageError, read_message, reply_message
+from .messages import MessageError, document_request_candidate, read_message, reply_message
 from .packaging import PackagingError, package_report
 from .requests import ExtractionError, RequestError, extract_request
 
@@ -27,6 +27,8 @@ def process_job(queue, job: dict, agent_address: str, allowed_senders: set[str] 
         incoming = read_message(job["raw"], agent_address)
         if allowed_senders is not None and incoming.sender.casefold() not in {sender.casefold() for sender in allowed_senders}:
             raise MessageError("The sender is not in the configured sender list")
+        if allowed_senders is None and not document_request_candidate(incoming.text):
+            raise MessageError("The message has no document request cues")
     except MessageError as error:
         queue.finish(job["id"], "ignored", {**info, "reason": str(error)})
         return
@@ -75,12 +77,12 @@ def process_job(queue, job: dict, agent_address: str, allowed_senders: set[str] 
         raise
 
 
-def prepare_pending(queue, agent_address, allowed_senders, *, interval=5, **kwargs):
+def prepare_pending(queue, agent_address, allowed_senders, *, interval=5, maximum_jobs=None, **kwargs):
     if queue.site_paused():
         print("Site retrieval is paused after an access block; pending requests were not started.", flush=True)
         return
     processed = 0
-    while (job := queue.claim()) is not None:
+    while (maximum_jobs is None or processed < maximum_jobs) and (job := queue.claim()) is not None:
         if processed:
             time.sleep(interval)
         try:

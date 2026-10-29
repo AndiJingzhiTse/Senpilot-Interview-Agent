@@ -35,6 +35,7 @@ class ServiceConfig:
     restart_limit: int = 5
     restart_delay: float = 5
     accept_any_sender: bool = False
+    received_after: int | None = None
 
     def worker_args(self):
         args = ["--gmail", "--watch", "--recover-processing", "--agent", self.agent_address,
@@ -45,6 +46,8 @@ class ServiceConfig:
         else:
             for sender in self.allowed_senders:
                 args.extend(["--allow-sender", sender])
+        if self.received_after is not None:
+            args.extend(["--received-after", str(self.received_after)])
         return args + (["--send"] if self.send else [])
 
 
@@ -52,7 +55,7 @@ def load_config(path: Path) -> ServiceConfig:
     path = path.resolve(strict=True)
     data = json.loads(path.read_text(encoding="utf-8-sig"))
     allowed = {"agent_address", "allowed_senders", "state", "token", "deepseek_key_file", "model", "send",
-               "poll_seconds", "job_interval", "restart_limit", "restart_delay", "accept_any_sender"}
+               "poll_seconds", "job_interval", "restart_limit", "restart_delay", "accept_any_sender", "received_after"}
     if not isinstance(data, dict) or set(data) - allowed:
         raise ConfigurationError("Unknown service configuration fields")
     if type(data.get("accept_any_sender", False)) is not bool:
@@ -65,6 +68,8 @@ def load_config(path: Path) -> ServiceConfig:
             raise ConfigurationError("Use accept_any_sender or allowed_senders, not both")
     elif not senders:
         raise ConfigurationError("Configure allowed_senders or explicitly enable accept_any_sender")
+    if "received_after" in data and (type(data["received_after"]) is not int or not 0 < data["received_after"] <= time.time()):
+        raise ConfigurationError("received_after must be a positive Unix timestamp no later than now")
     def location(name, optional=False):
         value = data.get(name)
         if value is None and optional:
@@ -84,7 +89,7 @@ def load_config(path: Path) -> ServiceConfig:
         raise ConfigurationError("Configure a DeepSeek model name")
     return ServiceConfig(mailbox(data.get("agent_address")), tuple(mailbox(value) for value in senders),
                          location("state"), location("token"), location("deepseek_key_file", optional=True),
-                         **{name: data[name] for name in ("model", "send", "poll_seconds", "job_interval", "restart_limit", "restart_delay", "accept_any_sender") if name in data})
+                         **{name: data[name] for name in ("model", "send", "poll_seconds", "job_interval", "restart_limit", "restart_delay", "accept_any_sender", "received_after") if name in data})
 
 
 def load_key(config: ServiceConfig) -> str:

@@ -101,3 +101,19 @@ The idle Windows task was stopped, its configuration updated, local preflight pa
 Its fresh heartbeat confirmed `sender_policy: any`, Python 3.12.16, and healthy running status. Previously excluded unread messages entered the queue.
 Activation snapshots are saved in ignored `artifacts/deployment/any-sender-before.json` and `artifacts/deployment/any-sender-activation.json`.
 Recipient receipt from a new address has not yet been confirmed for this change.
+
+## Intake repair and missing requests
+
+The first unrestricted implementation had an intake defect: it scanned all unread historical Inbox mail. It sent 426 clarification replies to unrelated historical messages beyond the five original test sends.
+The worker was stopped after investigation. The queue was backed up, all sent records retained, and 19 unsent historical or unrelated jobs marked ignored with repair reasons. No emails were deleted, relabelled, or recalled.
+
+The repaired worker persists the first intake timestamp in SQLite. An explicit `received_after` setting supports controlled catchup; the active deployment uses October 28, 2026, at midnight in Toronto.
+Gmail queries and metadata receipt timestamps both enforce the boundary. Subscription mail, obvious automated sender addresses, and messages without document request cues are ignored before extraction.
+The watcher processes one queued job at a time, sends its reply immediately, and polls on its regular cadence rather than draining a historical batch first.
+
+The suite ran 91 tests: 90 passed and the existing Windows symlink test was skipped. New checks cover persistent receipt boundaries, old metadata exclusion, unrelated mail, partial request clarification, automated sender exclusions, and sending a reply before the next retrieval.
+Local preflight passed and the restarted Windows task reported healthy status with unrestricted sender intake. The initial repaired queue contained 114 ignored records and 431 confirmed sends, with no pending or prepared historical jobs.
+Repair evidence and a private queue backup are under ignored `artifacts/deployment/intake-repair*` paths.
+
+The two missing requests from andi.xie242@gmail.com were found in Spam, outside the worker's Inbox query. Both request M12205 Other Documents and pass local request parsing.
+The agent's read and send scopes cannot move them. Andi was asked to select Not spam in the agent mailbox and leave them unread in the Inbox; recipient receipt remains unconfirmed until that step and processing complete.

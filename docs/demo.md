@@ -21,7 +21,7 @@ The evaluator does not need Gmail OAuth authorization to email the existing agen
 
 1. Show that the task is running and its heartbeat is current.
 2. From any address, send a new email to the agent with: “Can you give me Other Documents files from M12205?”
-3. Leave the request unread in the agent inbox until the worker polls it. The default polling interval is 60 seconds; processing time depends on the website and files.
+3. Leave the request unread in the agent inbox until the worker polls it. If Gmail placed it in Spam, select **Not spam** in the agent mailbox first. The default polling interval is 60 seconds; processing time depends on the website and files.
 4. Show the resulting reply with matter metadata, all five category counts, downloaded and skipped counts, and the ZIP attachment.
 5. Open the ZIP and its manifest. There are at most ten retrieved documents plus the manifest. Original names and file hashes are listed there.
 

@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import sqlite3
+import time
 
 
 class WorkerLockError(RuntimeError):
@@ -71,6 +72,15 @@ class JobQueue:
 
     def close(self):
         self.db.close()
+
+    def intake_after(self, requested: int | None = None) -> int:
+        """Persist the first intake boundary so restarts do not replay old mail."""
+        with self.db:
+            if requested is not None:
+                self.db.execute("INSERT OR REPLACE INTO settings(name,value) VALUES('intake_after',?)", (str(requested),))
+            else:
+                self.db.execute("INSERT OR IGNORE INTO settings(name,value) VALUES('intake_after',?)", (str(int(time.time()) - 1),))
+            return int(self.db.execute("SELECT value FROM settings WHERE name='intake_after'").fetchone()[0])
 
     def enqueue(self, source_id: str, raw: bytes, thread_id: str | None = None) -> bool:
         key = sha256(source_id.encode()).hexdigest()

@@ -72,6 +72,12 @@ Only the request subject and text body are passed to extraction. Addresses, atta
 
 ## First live request
 
+For a fresh state directory, capture the intake boundary before sending the test message:
+
+```powershell
+$senpilotReceivedAfter = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() - 1
+```
+
 From any email address, send a request to **andi.xie241@gmail.com** such as:
 
 > Can you give me Other Documents files from M12205?
@@ -79,23 +85,32 @@ From any email address, send a request to **andi.xie241@gmail.com** such as:
 Leave it unread in the agent inbox until the worker polls it. Run one poll to prepare a local reply:
 
 ```powershell
-& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --accept-any-sender --state artifacts/email/live
+& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --accept-any-sender --received-after $senpilotReceivedAfter --state artifacts/email/live
 ```
 
 This performs real request extraction and browser retrieval, but saves the reply locally. After inspecting it, add `--send` to send prepared replies through Gmail:
 
 ```powershell
-& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --accept-any-sender --state artifacts/email/live --send
+& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --accept-any-sender --received-after $senpilotReceivedAfter --state artifacts/email/live --send
 ```
 
 For automatic ongoing handling, add `--watch`. It polls every 60 seconds by default and stops with Ctrl+C:
 
 ```powershell
-& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --accept-any-sender --state artifacts/email/live --send --watch
+& $senpilotPython -m senpilot.email --gmail --agent andi.xie241@gmail.com --accept-any-sender --received-after $senpilotReceivedAfter --state artifacts/email/live --send --watch
 ```
 
 Gmail sends use MIME messages and base64url encoding as documented in Google's [sending guide](https://developers.google.com/workspace/gmail/api/guides/sending).
 With `--accept-any-sender`, polling accepts unread Inbox messages from any sender. It does not mark them read, delete them, or change their labels. Gmail message IDs prevent repeated handling within the same state directory. Automatic replies, bulk mail, delivery reports, and messages from the agent itself are ignored.
+
+Unrestricted intake otherwise starts at its first launch time. That boundary is persisted in the queue and reused after restarts, so old unread mail is not treated as new requests.
+`--received-after` selects an explicit receipt boundary in Unix seconds; the service JSON equivalent is `received_after`. Gmail supports this search format in its [filtering guide](https://developers.google.com/workspace/gmail/api/guides/filtering).
+The adapter also checks Gmail's `internalDate`, rather than trusting the email's Date header.
+In unrestricted mode, messages without a matter number or document request cues are ignored before AI extraction. Subscription headers and obvious automated sender addresses are excluded.
+The watcher sends each completed reply before processing the next job and polls for new mail on its regular cadence.
+
+If an expected request does not appear in the queue, check **Spam in the agent mailbox**. Select the request and click **Not spam**, then leave it unread in the Inbox.
+The current OAuth scopes cannot move messages between folders, and the worker does not scan Spam. A sender allowlist does not control Gmail's spam classification.
 
 For restricted intake, replace `--accept-any-sender` with one or more `--allow-sender ADDRESS` arguments. Choose exactly one policy. The background service uses `accept_any_sender: true` with an empty `allowed_senders` list in its JSON configuration; restart the task after changing it. Requesters do not need OAuth authorization or Google test user registration.
 
