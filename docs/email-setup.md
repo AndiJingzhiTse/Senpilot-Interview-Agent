@@ -112,6 +112,15 @@ The watcher sends each completed reply before processing the next job and polls 
 If an expected request does not appear in the queue, check **Spam in the agent mailbox**. Select the request and click **Not spam**, then leave it unread in the Inbox.
 The current OAuth scopes cannot move messages between folders, and the worker does not scan Spam. A sender allowlist does not control Gmail's spam classification.
 
+The existing agent mailbox has an approved Gmail filter for future document requests. To reproduce it, open Gmail's search options and set **To** to the agent mailbox, leave **From** blank, and set **Includes the words** to:
+
+```text
+{Exhibits "Key Documents" "Other Documents" Transcripts Recordings}
+```
+
+Choose **Create filter**, select **Never send it to Spam**, and save. This covers matching messages from any sender. Anyone using these terms can match the rule; unrelated mail keeps its normal filtering.
+Gmail does not apply this action to existing conversations in Spam or Bin. Existing test requests were moved out of Spam separately and left unread for processing.
+
 For restricted intake, replace `--accept-any-sender` with one or more `--allow-sender ADDRESS` arguments. Choose exactly one policy. The background service uses `accept_any_sender: true` with an empty `allowed_senders` list in its JSON configuration; restart the task after changing it. Requesters do not need OAuth authorization or Google test user registration.
 
 ## Attachment policy

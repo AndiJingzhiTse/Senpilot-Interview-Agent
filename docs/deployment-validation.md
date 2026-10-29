@@ -116,4 +116,18 @@ Local preflight passed and the restarted Windows task reported healthy status wi
 Repair evidence and a private queue backup are under ignored `artifacts/deployment/intake-repair*` paths.
 
 The two missing requests from andi.xie242@gmail.com were found in Spam, outside the worker's Inbox query. Both request M12205 Other Documents and pass local request parsing.
-The agent's read and send scopes cannot move them. Andi was asked to select Not spam in the agent mailbox and leave them unread in the Inbox; recipient receipt remains unconfirmed until that step and processing complete.
+The agent's read and send scopes cannot move them. They were subsequently recovered through Gmail's browser interface as described below.
+
+## Gmail request filter
+
+Andi approved a Gmail filter for future mail to andi.xie241@gmail.com containing Exhibits, Key Documents, Other Documents, Transcripts, or Recordings, with a blank sender criterion.
+Only Never send it to Spam was selected; the option to apply to old conversations was left off. Gmail visibly confirmed that the filter was created.
+This rule covers the supported category terms from any sender and leaves other mail subject to normal filtering. It is not a claim that every incoming email bypasses Spam.
+
+The 19:20 request was already in the Inbox but marked read, so it was marked unread through Gmail.
+The 20:25 request was selected in Spam and marked Not spam. Gmail confirmed that it moved to the Inbox. Read access through the existing token verified both messages had INBOX and UNREAD labels afterward.
+
+The background task processed both recovered requests on their first attempts using DeepSeek and returned complete results with ten documents each.
+Gmail returned sent message IDs for both replies to andi.xie242@gmail.com. The 20:25 request's ZIP contained 6686353 bytes; the 19:20 request's ZIP contained 6686345 bytes.
+Both saved MIME hashes matched their queue records, both decoded ZIP sizes matched their metadata, and both archives passed CRC checks and contained ten document entries.
+Detailed evidence is saved in ignored `artifacts/deployment/spam-request-recovery.json`. These checks confirm provider accepted sends; receipt in the customer's mailbox remains unconfirmed.
