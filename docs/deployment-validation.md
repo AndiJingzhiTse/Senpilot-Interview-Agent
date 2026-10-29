@@ -130,4 +130,4 @@ The 20:25 request was selected in Spam and marked Not spam. Gmail confirmed that
 The background task processed both recovered requests on their first attempts using DeepSeek and returned complete results with ten documents each.
 Gmail returned sent message IDs for both replies to andi.xie242@gmail.com. The 20:25 request's ZIP contained 6686353 bytes; the 19:20 request's ZIP contained 6686345 bytes.
 Both saved MIME hashes matched their queue records, both decoded ZIP sizes matched their metadata, and both archives passed CRC checks and contained ten document entries.
-Detailed evidence is saved in ignored `artifacts/deployment/spam-request-recovery.json`. These checks confirm provider accepted sends; receipt in the customer's mailbox remains unconfirmed.
+Detailed evidence is saved in ignored `artifacts/deployment/spam-request-recovery.json`. Andi subsequently confirmed receiving a reply in the customer mailbox. This confirms receipt for the recovered sender test; receipt of both individual replies and opening their ZIPs have not been separately confirmed.

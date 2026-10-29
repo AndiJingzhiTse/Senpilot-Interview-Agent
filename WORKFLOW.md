@@ -73,7 +73,7 @@ The alternative Linux image still requires a real Docker build and runtime test 
 The unrestricted intake change exposed old unread mail and sent 426 clarification replies to unrelated historical messages. The task was stopped, the queue backed up, and 19 unsent historical or unrelated jobs excluded without deleting their audit records.
 Intake now persists a receipt boundary, excludes subscription and obvious automated mail, ignores unrelated messages before extraction, and sends each watcher reply before starting the next job.
 Two missing requests from andi.xie242@gmail.com were found in Gmail Spam. Both contain valid M12205 Other Documents requests. An approved Gmail filter now selects Never send it to Spam for incoming mail to the agent containing any of the five supported categories, with no sender restriction. The two existing requests were moved into the Inbox and left unread for processing.
-The background task then processed both requests on their first attempts and Gmail confirmed two ZIP reply sends to andi.xie242@gmail.com. Each archive contained ten documents and passed the saved attachment checks. Customer receipt has not yet been confirmed.
+The background task then processed both requests on their first attempts and Gmail confirmed two ZIP reply sends to andi.xie242@gmail.com. Each archive contained ten documents and passed the saved attachment checks. Andi confirmed receiving a reply, completing the customer receipt check for the recovered sender test.
 
 ## References
 
